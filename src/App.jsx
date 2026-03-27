@@ -181,13 +181,14 @@ const App = () => {
           <div className="absolute top-1/2 -right-24 w-64 h-64 rounded-full bg-blue-400/20 blur-3xl"></div>
         </div>
 
-        {/* Logo Avianca en esquina superior derecha */}
-        <div className="absolute top-6 right-6 md:top-8 md:right-10 z-20">
+        {/* Logos esquina superior derecha */}
+        <div className="absolute top-6 right-6 md:top-8 md:right-10 z-20 flex items-center gap-3">
+          <img src={aiCloud} alt="AI" className="h-12 md:hidden object-contain animate-float" />
           <img src={aviancaLogo} alt="Avianca" className="h-20 md:h-28 object-contain" />
         </div>
 
-        {/* Nube AI flotando a la izquierda */}
-        <img src={aiCloud} alt="AI" className="absolute left-[10%] md:left-[15%] top-1/2 -translate-y-1/2 h-44 md:h-64 object-contain animate-float z-20" />
+        {/* Nube AI flotando a la izquierda — solo desktop */}
+        <img src={aiCloud} alt="AI" className="hidden md:block absolute left-[15%] top-1/2 -translate-y-1/2 h-64 object-contain animate-float z-20" />
 
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="pt-16 md:pt-20"></div>
