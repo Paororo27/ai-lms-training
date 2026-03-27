@@ -183,7 +183,7 @@ const App = () => {
 
         {/* Logos esquina superior derecha */}
         <div className="absolute top-6 right-6 md:top-8 md:right-10 z-20 flex items-center gap-3">
-          <img src={aiCloud} alt="AI" className="h-12 md:hidden object-contain animate-float" />
+          <img src={aiCloud} alt="AI" className="h-20 md:hidden object-contain animate-float" />
           <img src={aviancaLogo} alt="Avianca" className="h-20 md:h-28 object-contain" />
         </div>
 
