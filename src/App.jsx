@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Calendar, Clock, MapPin, Sparkles, Brain, Layout, BarChart, Users, Trophy, Zap } from 'lucide-react';
+import { Calendar, Clock, MapPin, Sparkles, Brain, Layout, BarChart, Users, Trophy, Zap, Mail, X } from 'lucide-react';
 import './App.css';
 import aviancaLogo from './assets/avianca-logo.png';
 import aiCloud from './assets/ai-cloud.png';
@@ -94,7 +94,7 @@ const App = () => {
       title: "Fundamentos de Copilot",
       desc: "Tus primeros pasos con seguridad y confianza.",
       preview: "Explorarán la interfaz de Copilot y realizarán su primera consulta asistida por IA.",
-      date: "",
+      date: "9 – 15 de abril",
       icon: <Sparkles className="w-6 h-6" />,
       color: colors.cyan
     },
@@ -104,7 +104,7 @@ const App = () => {
       title: "El arte de los Prompts",
       desc: "Cómo pedir para recibir resultados sorprendentes.",
       preview: "Taller práctico de construcción de prompts con ejemplos reales del día a día.",
-      date: "",
+      date: "9 – 15 de abril",
       icon: <Brain className="w-6 h-6" />,
       color: colors.orange
     },
@@ -114,7 +114,7 @@ const App = () => {
       title: "Productividad Real",
       desc: "Potenciando Word, PowerPoint y colaboración.",
       preview: "Demostración en vivo: crear presentaciones y documentos con asistencia de IA.",
-      date: "",
+      date: "16 – 22 de abril",
       icon: <Layout className="w-6 h-6" />,
       color: colors.pink
     },
@@ -124,7 +124,7 @@ const App = () => {
       title: "Inteligencia en Datos",
       desc: "Análisis avanzado en Excel con IA.",
       preview: "Ejercicio guiado de análisis de datos y generación de insights con Copilot en Excel.",
-      date: "",
+      date: "16 – 22 de abril",
       icon: <BarChart className="w-6 h-6" />,
       color: colors.blue
     },
@@ -134,7 +134,7 @@ const App = () => {
       title: "Gestión del Talento (RRHH)",
       desc: "Herramientas exclusivas para liderar personas.",
       preview: "Casos de uso: evaluaciones de desempeño, onboarding y comunicación interna con IA.",
-      date: "",
+      date: "23 – 29 de abril",
       icon: <Users className="w-6 h-6" />,
       color: colors.green
     },
@@ -144,11 +144,13 @@ const App = () => {
       title: "Reto Final",
       desc: "De la teoría a la práctica real en tu día a día.",
       preview: "Presentación de un caso real resuelto con Copilot ante el equipo.",
-      date: "",
+      date: "30 abr – 6 de mayo",
       icon: <Trophy className="w-6 h-6" />,
       color: colors.primaryMagenta
     }
   ];
+
+  const [letterOpen, setLetterOpen] = useState(false);
 
   // Estado para la animación de aviones en el footer
   const footerRef = useRef(null);
@@ -225,7 +227,7 @@ const App = () => {
 
                 <Reveal delay={200}>
                   <p className="text-slate-600 mb-10 leading-relaxed text-lg">
-                    Este programa ha sido diseñado para que la Inteligencia Artificial sea tu mejor apoyo estratégico. A través de un formato flexible, descubriremos cómo simplificar lo rutinario para enfocarnos en lo que realmente aporta valor.
+                    Diseñamos este programa para convertir a la Inteligencia Artificial en tu principal aliado estratégico. Con una metodología flexible, aprenderemos a automatizar lo rutinario para enfocar nuestra energía en lo que verdaderamente genera valor.
                   </p>
                 </Reveal>
 
@@ -246,7 +248,7 @@ const App = () => {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-800">Un mes de duración</p>
-                        <p className="text-xs text-slate-400">Abril 2024</p>
+                        <p className="text-xs text-slate-400">Abril 2026</p>
                       </div>
                     </div>
                   </div>
@@ -286,6 +288,15 @@ const App = () => {
                         <p className="font-bold text-base">CAV</p>
                       </div>
                     </div>
+
+                    <a
+                      href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=Pt2topeDeUW6MHo4gD_DvyLw7GkZYmJEqS2vAfaKbxFUMDFOT1dLTVhTSzlZSE9JMUFVTE5MT1pMSi4u"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-8 inline-block w-full text-center py-3.5 px-6 rounded-2xl font-bold text-base bg-white text-red-600 hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                    >
+                      Inscribirme
+                    </a>
                   </div>
                 </Reveal>
               </div>
@@ -317,6 +328,9 @@ const App = () => {
                   >
                     {m.week}
                   </div>
+                  {m.date && (
+                    <span className="text-xs font-semibold text-slate-400">{m.date}</span>
+                  )}
                 </div>
 
                 <div
@@ -339,6 +353,105 @@ const App = () => {
           ))}
         </div>
       </section>
+
+      {/* Carta de Fabian — sobre animado */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
+        <Reveal>
+          <div className="flex flex-col items-center">
+            <button
+              onClick={() => setLetterOpen(true)}
+              className="envelope-container group relative cursor-pointer focus:outline-none"
+              aria-label="Abrir carta de Fabian"
+            >
+              <div className="envelope-wrapper">
+                {/* Sobre */}
+                <div className="relative w-48 h-32 md:w-56 md:h-36">
+                  {/* Cuerpo del sobre */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-red-700 rounded-xl shadow-2xl group-hover:shadow-red-300/50 transition-shadow duration-500"></div>
+                  {/* Solapa superior */}
+                  <div className="envelope-flap absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-br from-red-600 to-red-800 rounded-t-xl origin-top"
+                    style={{ clipPath: 'polygon(0 0, 100% 0, 50% 100%)' }}
+                  ></div>
+                  {/* Triángulo inferior */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-red-800/30"
+                    style={{ clipPath: 'polygon(0 100%, 100% 100%, 50% 0)' }}
+                  ></div>
+                  {/* Icono de correo */}
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
+                    <Mail className="w-10 h-10 md:w-12 md:h-12 text-white/90 envelope-icon" />
+                  </div>
+                  {/* Sello decorativo */}
+                  <div className="absolute top-2 right-3 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-white/30"></div>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-6 text-lg font-bold text-slate-700 group-hover:text-red-600 transition-colors duration-300">
+                Carta de Fabian
+              </p>
+              <p className="text-sm text-slate-400 mt-1 group-hover:text-slate-500 transition-colors">
+                Toca para leer
+              </p>
+            </button>
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Modal carta de Fabian */}
+      {letterOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setLetterOpen(false)}
+        >
+          <div
+            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-8 md:p-12 relative animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setLetterOpen(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-500" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="font-bold text-slate-800 text-sm">Fabian Mascaretti</p>
+                <p className="text-xs text-slate-400">Vicepresidente de Experiencia del Empleado</p>
+              </div>
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-800 mb-6 pb-4 border-b border-slate-100">
+              Asunto: Invitación oficial: Estrategia de Transformación Digital IA 2026
+            </h3>
+
+            <div className="text-slate-600 leading-relaxed space-y-4 text-[15px]">
+              <p>Hola equipo:</p>
+
+              <p>Transformar nuestra Vicepresidencia y ser referentes de innovación es un reto que asumimos juntos.</p>
+
+              <p>El contexto actual nos exige evolucionar constantemente. La Inteligencia Artificial ha dejado de ser una tendencia para convertirse en una herramienta indispensable que está redefiniendo nuestra forma de trabajar, de crear y de aportar valor a la organización.</p>
+
+              <p>Tenemos proyectos estratégicos muy ambiciosos por delante. Para hacerlos realidad y llevar nuestra gestión al siguiente nivel, es fundamental que seamos pioneros. Necesitamos que cada uno de nosotros conozca, domine e integre la Inteligencia Artificial en su día a día laboral.</p>
+
+              <p>Por este motivo, los invito formalmente a ser parte de nuestra <strong>Estrategia de Transformación Digital IA</strong>.</p>
+
+              <p>Hemos estructurado este programa como una inversión directa en su desarrollo. Nuestro objetivo es darles el espacio para robustecer su perfil, continuar impulsando su aprendizaje y entregarles competencias que hoy son absolutamente necesarias para su crecimiento profesional en un entorno competitivo.</p>
+
+              <p>Este es un hito clave para nuestra área. Para asegurar el impacto que buscamos, cuento con su compromiso y participación activa a lo largo de toda la ruta de formación.</p>
+
+              <p>Los espero en nuestro <strong>Kick-off este próximo 8 de abril</strong> para compartirles a detalle la dinámica del programa y dar juntos el primer paso de esta gran evolución.</p>
+
+              <p className="mt-6">Saludos,</p>
+              <p className="font-bold text-slate-800">Fabian Mascaretti</p>
+              <p className="text-sm text-slate-500">Vicepresidente de Experiencia del Empleado</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Footer con aviones */}
       <footer className="max-w-6xl mx-auto px-6 pb-32 text-center overflow-visible">
