@@ -1,0 +1,39 @@
+.plane-loop {
+  offset-path: path(
+    "M -100,200 C 50,180 150,80 250,60 C 350,40 420,100 500,120 C 600,145 700,160 900,140"
+  );
+  offset-anchor: center;
+  offset-rotate: auto;
+  offset-distance: 0%;
+  animation: glide 7s linear forwards;
+}
+
+@keyframes glide {
+  0% {
+    offset-distance: 0%;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    offset-distance: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
