@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router'
 import { useAuth } from '../context/auth-context'
 import { LogOut, BookOpen, Shield } from 'lucide-react'
 import aviancaLogo from '../assets/avianca-logo.png'
+import { ToastContainer } from '../components/toast'
 
 export default function CourseLayout() {
   const { userCode, role, signOut } = useAuth()
@@ -58,6 +59,7 @@ export default function CourseLayout() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Outlet />
       </main>
+      <ToastContainer />
     </div>
   )
 }

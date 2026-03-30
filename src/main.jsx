@@ -15,6 +15,9 @@ const Diagnostico = lazy(() => import('./course/diagnostico'))
 const Reto = lazy(() => import('./course/reto'))
 const Certificado = lazy(() => import('./course/certificado'))
 const Admin = lazy(() => import('./course/admin'))
+const AdminModulos = lazy(() => import('./course/admin/admin-modulos'))
+const AdminPruebas = lazy(() => import('./course/admin/admin-pruebas'))
+const AdminRetos = lazy(() => import('./course/admin/admin-retos'))
 
 const Loading = () => (
   <div className="min-h-screen flex items-center justify-center bg-avianca-dark">
@@ -60,12 +63,19 @@ const router = createBrowserRouter([
     element: <ProtectedRoute adminOnly />,
     children: [
       {
-        path: '/course/admin',
         element: (
           <Suspense fallback={<Loading />}>
-            <Admin />
+            <CourseLayout />
           </Suspense>
         ),
+        children: [
+          { path: '/course/admin', element: <Suspense fallback={<Loading />}><Admin /></Suspense> },
+          { path: '/course/admin/modulos', element: <Suspense fallback={<Loading />}><AdminModulos /></Suspense> },
+          { path: '/course/admin/modulos/:id', element: <Suspense fallback={<Loading />}><AdminModulos /></Suspense> },
+          { path: '/course/admin/pruebas', element: <Suspense fallback={<Loading />}><AdminPruebas /></Suspense> },
+          { path: '/course/admin/pruebas/:id', element: <Suspense fallback={<Loading />}><AdminPruebas /></Suspense> },
+          { path: '/course/admin/retos', element: <Suspense fallback={<Loading />}><AdminRetos /></Suspense> },
+        ],
       },
     ],
   },

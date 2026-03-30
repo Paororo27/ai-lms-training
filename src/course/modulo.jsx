@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import { CheckCircle, Circle, Play, FileText, Wrench, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import 'lite-youtube-embed'
 import 'lite-youtube-embed/src/lite-yt-embed.css'
 
@@ -169,14 +171,16 @@ export default function Modulo() {
 
                 {current.contenido?.texto && (
                   <div className="prose prose-slate prose-sm max-w-none">
-                    <p className="whitespace-pre-line text-slate-600 leading-relaxed">{current.contenido.texto}</p>
+                    <Markdown remarkPlugins={[remarkGfm]}>{current.contenido.texto}</Markdown>
                   </div>
                 )}
 
                 {current.tipo === 'ejercicio' && current.contenido?.instrucciones && (
                   <div className="mt-4 bg-avianca-cyan/5 border border-avianca-cyan/20 rounded-xl p-5">
                     <h3 className="font-semibold text-avianca-dark text-sm mb-2">Instrucciones del ejercicio</h3>
-                    <p className="text-sm text-slate-600 whitespace-pre-line">{current.contenido.instrucciones}</p>
+                    <div className="text-sm text-slate-600 prose prose-sm max-w-none">
+                      <Markdown remarkPlugins={[remarkGfm]}>{current.contenido.instrucciones}</Markdown>
+                    </div>
                   </div>
                 )}
               </div>

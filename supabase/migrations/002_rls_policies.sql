@@ -85,3 +85,8 @@ CREATE POLICY "admin_read_all_entregas" ON entregas_reto
   FOR SELECT TO authenticated USING (
     (select (auth.jwt()->'app_metadata'->>'role')) = 'admin'
   );
+
+CREATE POLICY "admin_read_all_retos" ON retos
+  FOR SELECT TO authenticated USING (
+    (select (auth.jwt()->'app_metadata'->>'role')) = 'admin'
+  );

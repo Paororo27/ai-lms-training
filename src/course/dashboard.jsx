@@ -8,7 +8,7 @@ import { Lock, CheckCircle, ChevronRight, Sparkles, Brain, Layout, BarChart, Use
 const MODULE_ICONS = [Sparkles, Brain, Layout, BarChart, Users, Trophy]
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const navigate = useNavigate()
   const [modulos, setModulos] = useState([])
   const [progreso, setProgreso] = useState({ lecciones: [], intentos: [], entrega: null })
@@ -72,6 +72,8 @@ export default function Dashboard() {
     }
   })
 
+  const isAdmin = role === 'admin'
+
   const getModuleStatus = (modulo, index) => {
     const moduleLessons = modulo.lecciones?.map(l => l.id) || []
     const allLessonsComplete = moduleLessons.length > 0 && moduleLessons.every(id => completedLessons.has(id))
@@ -79,6 +81,7 @@ export default function Dashboard() {
     const pruebaAprobada = modulePrueba ? approvedTests.has(modulePrueba.id) : false
 
     if (allLessonsComplete && pruebaAprobada) return 'completado'
+    if (isAdmin) return 'disponible'
     if (index === 0) return diagData.preCompleted ? 'disponible' : 'bloqueado'
 
     const prevModulo = modulos[index - 1]

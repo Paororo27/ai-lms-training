@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
-import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart } from 'lucide-react'
+import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy } from 'lucide-react'
+import { NavLink } from 'react-router'
 import ProgressBar from '../components/progress-bar'
 
 export default function Admin() {
@@ -180,7 +181,24 @@ export default function Admin() {
         <ChevronLeft className="w-4 h-4" /> Dashboard
       </button>
 
-      <h1 className="text-xl font-bold text-avianca-dark">Panel de Administracion</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-avianca-dark">Panel de Administracion</h1>
+        <div className="flex gap-2">
+          {[
+            { to: '/course/admin/modulos', icon: BookOpen, label: 'Modulos' },
+            { to: '/course/admin/pruebas', icon: ClipboardList, label: 'Pruebas' },
+            { to: '/course/admin/retos', icon: Trophy, label: 'Retos' },
+          ].map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-avianca-cyan hover:text-avianca-dark transition-colors"
+            >
+              <Icon className="w-4 h-4" /> {label}
+            </NavLink>
+          ))}
+        </div>
+      </div>
 
       {/* Metricas generales */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
