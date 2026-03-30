@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+@theme {
+  --color-avianca-red: #FF0000;
+  --color-avianca-magenta: #B50080;
+  --color-avianca-cyan: #89D4E1;
+  --color-avianca-pink: #FF3093;
+  --color-avianca-orange: #F98013;
+  --color-avianca-blue: #1D9BF0;
+  --color-avianca-green: #23C847;
+  --color-avianca-dark: #1e293b;
+  --color-avianca-soft-cyan: rgba(137, 212, 225, 0.15);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

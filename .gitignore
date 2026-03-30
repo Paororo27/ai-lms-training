@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.local
+
+# Usuarios generados (contiene contraseñas)
+supabase/usuarios-generados.csv
+
+# Salesforce DX (no es parte de este proyecto)
+.sfdx/
+
+# Scripts de debug temporales
+supabase/check-policies.mjs
+supabase/debug-jwt.mjs
+supabase/debug-rls.mjs
