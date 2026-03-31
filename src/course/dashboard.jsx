@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import ProgressBar from '../components/progress-bar'
-import { Lock, CheckCircle, ChevronRight, Sparkles, Brain, Layout, BarChart, Users, Trophy, ClipboardCheck, Award, ArrowRight } from 'lucide-react'
+import { Lock, CheckCircle, ChevronRight, Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart, Trophy, ClipboardCheck, Award, ArrowRight } from 'lucide-react'
 
-const MODULE_ICONS = [Sparkles, Brain, Layout, BarChart, Users, Trophy]
+const MODULE_ICONS = [Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart]
+const MODULE_COLORS = ['#89D4E1', '#F98013', '#FF3093', '#1D9BF0', '#23C847', '#FF0000', '#B50080', '#FF0000']
 
 export default function Dashboard() {
   const { user, role } = useAuth()
@@ -172,6 +173,7 @@ export default function Dashboard() {
           {modulos.map((modulo, index) => {
             const status = getModuleStatus(modulo, index)
             const Icon = MODULE_ICONS[index] || Sparkles
+            const color = MODULE_COLORS[index] || MODULE_COLORS[0]
             const prueba = modulo.pruebas?.find(p => p.tipo === 'modular')
             const score = prueba ? bestScores[prueba.id] : null
 
@@ -193,14 +195,14 @@ export default function Dashboard() {
                 </span>
 
                 <div className="flex items-start gap-3 mt-2">
-                  <div className={`p-2 rounded-xl ${
-                    status === 'completado' ? 'bg-avianca-green/10' :
-                    status === 'disponible' ? 'bg-avianca-cyan/10' : 'bg-slate-200'
-                  }`}>
-                    <Icon className={`w-5 h-5 ${
-                      status === 'completado' ? 'text-avianca-green' :
-                      status === 'disponible' ? 'text-avianca-cyan' : 'text-slate-400'
-                    }`} />
+                  <div
+                    className={`p-2 rounded-xl ${status === 'bloqueado' ? 'bg-slate-200' : ''}`}
+                    style={status !== 'bloqueado' ? { backgroundColor: `${color}15` } : undefined}
+                  >
+                    <Icon
+                      className={`w-5 h-5 ${status === 'bloqueado' ? 'text-slate-400' : ''}`}
+                      style={status !== 'bloqueado' ? { color } : undefined}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-avianca-dark text-sm leading-tight">{modulo.titulo}</h3>
