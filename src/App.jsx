@@ -183,14 +183,13 @@ const App = () => {
           <div className="absolute top-1/2 -right-24 w-64 h-64 rounded-full bg-blue-400/20 blur-3xl"></div>
         </div>
 
-        {/* Logos esquina superior derecha */}
-        <div className="absolute top-6 right-6 md:top-8 md:right-10 z-20 flex items-center gap-3">
-          <img src={aiCloud} alt="AI" className="h-20 md:hidden object-contain animate-float" />
+        {/* Logo Avianca esquina superior derecha */}
+        <div className="absolute top-6 right-6 md:top-8 md:right-10 z-20">
           <img src={aviancaLogo} alt="Avianca" className="h-20 md:h-28 object-contain" />
         </div>
 
-        {/* Nube AI flotando a la izquierda — solo desktop */}
-        <img src={aiCloud} alt="AI" className="hidden md:block absolute left-[15%] top-1/2 -translate-y-1/2 h-64 object-contain animate-float z-20" />
+        {/* Nube AI a la misma altura que el logo Avianca, lado izquierdo */}
+        <img src={aiCloud} alt="AI" className="absolute left-4 top-6 h-16 sm:left-6 sm:h-20 md:left-[8%] md:top-8 md:h-28 lg:h-36 object-contain animate-float z-20 pointer-events-none" />
 
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="pt-16 md:pt-20"></div>
@@ -238,7 +237,7 @@ const App = () => {
                         <Clock className="w-6 h-6" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-800">1 Hora Semanal</p>
+                        <p className="text-sm font-bold text-slate-800">1.5 Horas Semanales</p>
                         <p className="text-xs text-slate-400">Formato flexible</p>
                       </div>
                     </div>
@@ -279,13 +278,16 @@ const App = () => {
                         <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
                           <Clock className="w-5 h-5" />
                         </div>
-                        <p className="font-bold text-base">2:00 PM</p>
+                        <p className="font-bold text-base">9:00 - 10:00 AM</p>
                       </div>
                       <div className="flex items-center gap-4 group">
                         <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
                           <MapPin className="w-5 h-5" />
                         </div>
-                        <p className="font-bold text-base">CAV</p>
+                        <div>
+                          <p className="font-bold text-base">CAV, Segundo Piso</p>
+                          <p className="text-xs text-white/70">Si no estás en Bogotá, lo transmitiremos</p>
+                        </div>
                       </div>
                     </div>
 
@@ -310,7 +312,7 @@ const App = () => {
         <Reveal>
           <div className="mb-16">
             <h2 className="text-3xl font-black text-slate-900 mb-4 uppercase tracking-tight">Hoja de Ruta</h2>
-            <p className="text-slate-500 text-lg">Un mes de transformación diseñado para tu día a día profesional. Organiza tu tiempo de estudio acorde a tu agenda: solo necesitas una hora a la semana durante un mes.</p>
+            <p className="text-slate-500 text-lg">Un mes de transformación diseñado para tu día a día profesional. Organiza tu tiempo de estudio acorde a tu agenda: solo necesitas hora y media a la semana durante un mes.</p>
           </div>
         </Reveal>
 
