@@ -1,3 +1,4 @@
+
 # Logs
 logs
 *.log
@@ -37,3 +38,5 @@ supabase/usuarios-generados.csv
 supabase/check-policies.mjs
 supabase/debug-jwt.mjs
 supabase/debug-rls.mjs
+supabase/reset-and-generate-users.mjs
+supabase/generate-users.mjs
