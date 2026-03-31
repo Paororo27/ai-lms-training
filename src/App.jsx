@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Calendar, Clock, MapPin, Sparkles, Brain, Layout, BarChart, Users, Trophy, Zap, Mail, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, Sparkles, Brain, Layout, BarChart, Users, Trophy, Zap, Mail, X, Copy, FileSearch, Database, Globe, Heart } from 'lucide-react';
 import './App.css';
 import aviancaLogo from './assets/avianca-logo.png';
 import aiCloud from './assets/ai-cloud.png';
@@ -91,9 +91,9 @@ const App = () => {
     {
       id: 1,
       week: "Semana 1",
-      title: "Fundamentos de Copilot",
-      desc: "Tus primeros pasos con seguridad y confianza.",
-      preview: "Explorarán la interfaz de Copilot y realizarán su primera consulta asistida por IA.",
+      title: "Nuevos Horizontes: El Despertar Digital",
+      desc: "Descubre el potencial de la IA y los fundamentos de los modelos de lenguaje.",
+      preview: "Identificar el potencial de escala de la IA, comprender los LLM e implementar protocolos de anonimización de datos sensibles.",
       date: "9 – 15 de abril",
       icon: <Sparkles className="w-6 h-6" />,
       color: colors.cyan
@@ -101,9 +101,9 @@ const App = () => {
     {
       id: 2,
       week: "Semana 1",
-      title: "El arte de los Prompts",
-      desc: "Cómo pedir para recibir resultados sorprendentes.",
-      preview: "Taller práctico de construcción de prompts con ejemplos reales del día a día.",
+      title: "Ingeniería del Diálogo: El Arte del Prompt",
+      desc: "Domina el framework profesional de arquitectura de instrucciones.",
+      preview: "Aplicar restricciones para guiar a la IA, perfeccionar entregables complejos mediante la iteración.",
       date: "9 – 15 de abril",
       icon: <Brain className="w-6 h-6" />,
       color: colors.orange
@@ -111,42 +111,62 @@ const App = () => {
     {
       id: 3,
       week: "Semana 2",
-      title: "Productividad Real",
-      desc: "Potenciando Word, PowerPoint y colaboración.",
-      preview: "Demostración en vivo: crear presentaciones y documentos con asistencia de IA.",
+      title: "ADN Digital: Clonación y Lógica",
+      desc: "Clona el tono de voz de la empresa y estandariza la excelencia.",
+      preview: "Evitar sesgos y errores en análisis complejos, estandarizar la calidad en todo el departamento.",
       date: "16 – 22 de abril",
-      icon: <Layout className="w-6 h-6" />,
+      icon: <Copy className="w-6 h-6" />,
       color: colors.pink
     },
     {
       id: 4,
       week: "Semana 2",
-      title: "Inteligencia en Datos",
-      desc: "Análisis avanzado en Excel con IA.",
-      preview: "Ejercicio guiado de análisis de datos y generación de insights con Copilot en Excel.",
+      title: "Arquitectos de Copilotos: Tu Yo Aumentado",
+      desc: "Diseña flujos de trabajo y configura tu Instrucción Maestra.",
+      preview: "Diseñar flujos secuenciales para proyectos largos, automatizar tareas diarias y delegar operaciones efectivamente.",
       date: "16 – 22 de abril",
-      icon: <BarChart className="w-6 h-6" />,
+      icon: <Layout className="w-6 h-6" />,
       color: colors.blue
     },
     {
       id: 5,
       week: "Semana 3",
-      title: "Gestión del Talento (RRHH)",
-      desc: "Herramientas exclusivas para liderar personas.",
-      preview: "Casos de uso: evaluaciones de desempeño, onboarding y comunicación interna con IA.",
+      title: "Minería de Valor: Documentos Inteligentes",
+      desc: "Procesa archivos extensos y genera visualizaciones rápidas.",
+      preview: "Sintetizar documentos detectando puntos clave, ejecutar limpieza de datos y generar visualizaciones.",
       date: "23 – 29 de abril",
-      icon: <Users className="w-6 h-6" />,
+      icon: <FileSearch className="w-6 h-6" />,
       color: colors.green
     },
     {
       id: 6,
+      week: "Semana 3",
+      title: "Alquimia de Datos: Historias que Deciden",
+      desc: "Cruza bases de datos y construye narrativas de impacto.",
+      preview: "Realizar cruces relacionales sin fórmulas complejas, diseñar presentaciones ejecutivas que traduzcan datos en decisiones.",
+      date: "23 – 29 de abril",
+      icon: <Database className="w-6 h-6" />,
+      color: colors.primaryRed
+    },
+    {
+      id: 7,
       week: "Semana 4",
-      title: "Reto Final",
-      desc: "De la teoría a la práctica real en tu día a día.",
-      preview: "Presentación de un caso real resuelto con Copilot ante el equipo.",
+      title: "Exploradores del Ecosistema: Más allá del Texto",
+      desc: "Potencia la comunicación con generadores visuales y tendencias globales.",
+      preview: "Utilizar generadores visuales, identificar tendencias de IA aplicadas al bienestar e integrar herramientas creativas.",
       date: "30 abr – 6 de mayo",
-      icon: <Trophy className="w-6 h-6" />,
+      icon: <Globe className="w-6 h-6" />,
       color: colors.primaryMagenta
+    },
+    {
+      id: 8,
+      week: "Semana 4",
+      title: "Conexión Aumentada: IA con Propósito",
+      desc: "Aplica la IA en retos cotidianos y lidera la cultura de innovación.",
+      preview: "Aplicar IA para ganar calidad de vida, liderar dinámicas innovadoras y viralizar la cultura de innovación.",
+      date: "30 abr – 6 de mayo",
+      icon: <Heart className="w-6 h-6" />,
+      color: colors.primaryRed
     }
   ];
 
@@ -312,47 +332,52 @@ const App = () => {
         <Reveal>
           <div className="mb-16">
             <h2 className="text-3xl font-black text-slate-900 mb-4 uppercase tracking-tight">Hoja de Ruta</h2>
-            <p className="text-slate-500 text-lg">Un mes de transformación diseñado para tu día a día profesional. Organiza tu tiempo de estudio acorde a tu agenda: solo necesitas hora y media a la semana durante un mes.</p>
+            <p className="text-slate-500 text-lg">Un mes de transformación diseñado para tu día a día profesional. 8 cursos en 4 semanas, 2 cursos por semana. Organiza tu tiempo de estudio acorde a tu agenda.</p>
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {modules.map((m, i) => (
-            <Reveal key={m.id} delay={i * 120}>
-              <div
-                className="bg-white p-10 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative group h-full"
-              >
-                {/* Fecha (en blanco) + Semana */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div
-                    className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-white"
-                    style={{ backgroundColor: m.color }}
-                  >
-                    {m.week}
+        <div className="space-y-12">
+          {[1, 2, 3, 4].map((weekNum) => {
+            const weekModules = modules.filter(m => m.week === `Semana ${weekNum}`);
+            const weekDate = weekModules[0]?.date;
+            return (
+              <Reveal key={weekNum} delay={weekNum * 100}>
+                <div className="flex flex-col md:flex-row gap-5 md:gap-8">
+                  {/* Etiqueta de semana */}
+                  <div className="md:w-36 shrink-0 flex md:flex-col items-center md:items-start gap-2 md:pt-4">
+                    <div className="px-4 py-2 rounded-xl bg-avianca-dark text-white text-sm font-bold">
+                      Semana {weekNum}
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium">{weekDate}</span>
                   </div>
-                  {m.date && (
-                    <span className="text-xs font-semibold text-slate-400">{m.date}</span>
-                  )}
-                </div>
 
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg rotate-3 group-hover:rotate-0 transition-transform"
-                  style={{ backgroundColor: m.color }}
-                >
-                  {m.icon}
-                </div>
-                <h4 className="font-black text-xl mb-3 text-slate-800">{m.title}</h4>
-                <p className="text-sm text-slate-500 leading-relaxed font-medium mb-4">{m.desc}</p>
+                  {/* 2 cursos por fila */}
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {weekModules.map((m) => (
+                      <div
+                        key={m.id}
+                        className="bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
+                      >
+                        <div
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 text-white shadow-lg rotate-3 group-hover:rotate-0 transition-transform"
+                          style={{ backgroundColor: m.color }}
+                        >
+                          {m.icon}
+                        </div>
+                        <h4 className="font-black text-lg mb-2 text-slate-800">{m.title}</h4>
+                        <p className="text-sm text-slate-500 leading-relaxed font-medium mb-4">{m.desc}</p>
 
-                {/* Preview / descripción de lo que se vería */}
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">En este curso</p>
-                  <p className="text-sm text-slate-600 leading-relaxed">{m.preview}</p>
+                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">En este curso</p>
+                          <p className="text-sm text-slate-600 leading-relaxed">{m.preview}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </section>
 
