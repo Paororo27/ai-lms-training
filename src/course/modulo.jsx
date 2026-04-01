@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
-import { CheckCircle, Circle, Play, FileText, Wrench, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { CheckCircle, Circle, Play, FileText, Wrench, Gamepad2, ExternalLink, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import 'lite-youtube-embed'
@@ -74,8 +74,8 @@ export default function Modulo() {
   const allComplete = lecciones.every(l => progresoMap[l.id])
   const completedCount = lecciones.filter(l => progresoMap[l.id]).length
 
-  const TIPO_ICONS = { video: Play, texto: FileText, ejercicio: Wrench }
-  const TIPO_LABELS = { video: 'Video', texto: 'Lectura', ejercicio: 'Ejercicio practico' }
+  const TIPO_ICONS = { video: Play, texto: FileText, ejercicio: Wrench, recurso_externo: Gamepad2 }
+  const TIPO_LABELS = { video: 'Video', texto: 'Lectura', ejercicio: 'Ejercicio practico', recurso_externo: 'Actividad interactiva' }
 
   return (
     <div className="space-y-6">
@@ -166,6 +166,36 @@ export default function Modulo() {
                 {current.tipo === 'video' && current.contenido?.media_url && (
                   <div className="mb-4 rounded-xl overflow-hidden">
                     <lite-youtube videoid={current.contenido.media_url} />
+                  </div>
+                )}
+
+                {current.tipo === 'recurso_externo' && current.contenido?.url && current.contenido?.modo !== 'redireccion' && (
+                  <div className="mb-4 relative w-full max-w-[795px]" style={{ aspectRatio: '795/690' }}>
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-100 rounded-xl">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-avianca-cyan" />
+                    </div>
+                    <iframe
+                      src={current.contenido.url}
+                      sandbox="allow-scripts allow-same-origin allow-popups"
+                      allow="fullscreen"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      onLoad={(e) => e.target.previousElementSibling?.remove()}
+                      className="absolute inset-0 w-full h-full border-0 rounded-xl"
+                    />
+                  </div>
+                )}
+
+                {current.tipo === 'recurso_externo' && current.contenido?.url && current.contenido?.modo === 'redireccion' && (
+                  <div className="mb-4">
+                    <a
+                      href={current.contenido.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-avianca-cyan to-avianca-blue text-white font-semibold rounded-xl hover:opacity-90 transition-opacity"
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                      Ir al recurso externo
+                    </a>
                   </div>
                 )}
 

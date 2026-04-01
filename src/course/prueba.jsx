@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import QuizQuestion from '../components/quiz-question'
 import { ChevronLeft, CheckCircle, XCircle, RotateCcw, ArrowRight } from 'lucide-react'
+import confetti from 'canvas-confetti'
 
 export default function Prueba() {
   const { id } = useParams()
@@ -18,6 +19,12 @@ export default function Prueba() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [intentosPrevios, setIntentosPrevios] = useState(0)
+
+  useEffect(() => {
+    if (resultado?.aprobado) {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } })
+    }
+  }, [resultado])
 
   useEffect(() => {
     if (!user || !id) return
