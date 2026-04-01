@@ -1,14 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../../lib/supabase'
-import { ChevronLeft, Plus, Trash2, ChevronUp, ChevronDown, Pencil, Save, X, Video, FileText, Wrench } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, ChevronUp, ChevronDown, Pencil, Save, X, Video, FileText, Wrench, Gamepad2 } from 'lucide-react'
 import { toast } from '../../components/toast'
 
 const TIPOS_LECCION = [
   { value: 'video', label: 'Video', icon: Video },
   { value: 'texto', label: 'Texto', icon: FileText },
   { value: 'ejercicio', label: 'Ejercicio', icon: Wrench },
+  { value: 'recurso_externo', label: 'Recurso externo', icon: Gamepad2 },
 ]
+
+function extractEmbedUrl(input) {
+  const trimmed = (input || '').trim()
+  if (!trimmed) return null
+  const match = trimmed.match(/src=["']([^"']+)["']/)
+  const url = match ? match[1] : trimmed
+  if (!/^https?:\/\//.test(url)) return null
+  return url
+}
 
 export default function AdminModulos() {
   const { id } = useParams()
@@ -126,11 +136,19 @@ export default function AdminModulos() {
   const saveLeccion = async () => {
     if (!editingLeccion) return
     setSaving(true)
-    const contenido = editingLeccion.tipo === 'video'
-      ? { media_url: editingLeccion.contenido?.media_url || '', texto: editingLeccion.contenido?.texto || '' }
-      : editingLeccion.tipo === 'ejercicio'
-      ? { instrucciones: editingLeccion.contenido?.instrucciones || '', texto: editingLeccion.contenido?.texto || '' }
-      : { texto: editingLeccion.contenido?.texto || '' }
+    let contenido
+    if (editingLeccion.tipo === 'recurso_externo') {
+      const url = extractEmbedUrl(editingLeccion.contenido?.embed_input || editingLeccion.contenido?.url || '')
+      if (!url) { toast('URL no valida. Pega un iframe o una URL directa.', 'error'); setSaving(false); return }
+      const modo = editingLeccion.contenido?.modo || 'embed'
+      contenido = { url, modo, texto: editingLeccion.contenido?.texto || '' }
+    } else if (editingLeccion.tipo === 'video') {
+      contenido = { media_url: editingLeccion.contenido?.media_url || '', texto: editingLeccion.contenido?.texto || '' }
+    } else if (editingLeccion.tipo === 'ejercicio') {
+      contenido = { instrucciones: editingLeccion.contenido?.instrucciones || '', texto: editingLeccion.contenido?.texto || '' }
+    } else {
+      contenido = { texto: editingLeccion.contenido?.texto || '' }
+    }
 
     const { data: updated, error } = await supabase.from('lecciones').update({
       titulo: editingLeccion.titulo, tipo: editingLeccion.tipo,
@@ -252,11 +270,22 @@ export default function AdminModulos() {
                             {editingLeccion.tipo === 'video' && (
                               <input value={editingLeccion.contenido?.media_url || ''} onChange={e => setEditingLeccion({ ...editingLeccion, contenido: { ...editingLeccion.contenido, media_url: e.target.value } })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="YouTube Video ID (ej: dQw4w9WgXcQ)" />
                             )}
-                            <textarea value={editingLeccion.tipo === 'ejercicio' ? (editingLeccion.contenido?.instrucciones || '') : (editingLeccion.contenido?.texto || '')} onChange={e => {
-                              const key = editingLeccion.tipo === 'ejercicio' ? 'instrucciones' : 'texto'
-                              setEditingLeccion({ ...editingLeccion, contenido: { ...editingLeccion.contenido, [key]: e.target.value } })
-                            }} rows={4} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono" placeholder={editingLeccion.tipo === 'ejercicio' ? 'Instrucciones del ejercicio (Markdown)' : 'Contenido (Markdown)'} />
-                            {editingLeccion.tipo === 'ejercicio' && (
+                            {editingLeccion.tipo === 'recurso_externo' && (
+                              <>
+                                <select value={editingLeccion.contenido?.modo || 'embed'} onChange={e => setEditingLeccion({ ...editingLeccion, contenido: { ...editingLeccion.contenido, modo: e.target.value } })} className="px-3 py-2 border border-slate-200 rounded-lg text-sm">
+                                  <option value="embed">Embed (iframe)</option>
+                                  <option value="redireccion">Redireccion (boton externo)</option>
+                                </select>
+                                <textarea value={editingLeccion.contenido?.embed_input || editingLeccion.contenido?.url || ''} onChange={e => setEditingLeccion({ ...editingLeccion, contenido: { ...editingLeccion.contenido, embed_input: e.target.value } })} rows={editingLeccion.contenido?.modo === 'redireccion' ? 1 : 3} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono" placeholder={editingLeccion.contenido?.modo === 'redireccion' ? 'URL del recurso (ej: https://ubitslearning.com/...)' : 'Pega el iframe o la URL directa del recurso (Educaplay, Genially, etc.)'} />
+                              </>
+                            )}
+                            {editingLeccion.tipo !== 'recurso_externo' && (
+                              <textarea value={editingLeccion.tipo === 'ejercicio' ? (editingLeccion.contenido?.instrucciones || '') : (editingLeccion.contenido?.texto || '')} onChange={e => {
+                                const key = editingLeccion.tipo === 'ejercicio' ? 'instrucciones' : 'texto'
+                                setEditingLeccion({ ...editingLeccion, contenido: { ...editingLeccion.contenido, [key]: e.target.value } })
+                              }} rows={4} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono" placeholder={editingLeccion.tipo === 'ejercicio' ? 'Instrucciones del ejercicio (Markdown)' : 'Contenido (Markdown)'} />
+                            )}
+                            {(editingLeccion.tipo === 'ejercicio' || editingLeccion.tipo === 'recurso_externo') && (
                               <textarea value={editingLeccion.contenido?.texto || ''} onChange={e => setEditingLeccion({ ...editingLeccion, contenido: { ...editingLeccion.contenido, texto: e.target.value } })} rows={2} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono" placeholder="Texto complementario (Markdown)" />
                             )}
                             <div className="flex gap-2">

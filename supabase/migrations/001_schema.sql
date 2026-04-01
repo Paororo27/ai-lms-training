@@ -22,7 +22,7 @@ CREATE TABLE lecciones (
   modulo_id SMALLINT NOT NULL REFERENCES modulos(id) ON DELETE CASCADE,
   orden SMALLINT NOT NULL,
   titulo TEXT NOT NULL,
-  tipo TEXT NOT NULL CHECK (tipo IN ('video', 'texto', 'ejercicio')),
+  tipo TEXT NOT NULL CHECK (tipo IN ('video', 'texto', 'ejercicio', 'recurso_externo')),
   contenido JSONB NOT NULL,
   duracion_minutos SMALLINT NOT NULL CHECK (duracion_minutos > 0),
   UNIQUE (modulo_id, orden)
