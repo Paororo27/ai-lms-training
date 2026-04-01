@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
-import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy } from 'lucide-react'
+import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy, RotateCcw } from 'lucide-react'
+import { toast } from '../components/toast'
 import { NavLink } from 'react-router'
 import ProgressBar from '../components/progress-bar'
 
@@ -169,6 +170,21 @@ export default function Admin() {
     )
   }
 
+  const resetUser = async (userId) => {
+    if (!confirm('Borrar TODO el historial de pruebas, progreso y reto de este usuario? Esta accion no se puede deshacer.')) return
+    const [r1, r2, r3] = await Promise.all([
+      supabase.from('intentos_prueba').delete().eq('usuario_id', userId),
+      supabase.from('progreso_usuario').delete().eq('usuario_id', userId),
+      supabase.from('entregas_reto').delete().eq('usuario_id', userId),
+    ])
+    if (r1.error || r2.error || r3.error) {
+      toast('Error al resetear usuario', 'error')
+      return
+    }
+    toast('Historial del usuario borrado')
+    loadAdmin()
+  }
+
   const filteredUsers = filter === 'todos'
     ? usuarios
     : usuarios.filter(u => u.estado === filter)
@@ -302,6 +318,7 @@ export default function Admin() {
                 <th className="px-5 py-3 font-medium text-slate-500">Modulos</th>
                 <th className="px-5 py-3 font-medium text-slate-500">Puntaje</th>
                 <th className="px-5 py-3 font-medium text-slate-500">Mejora</th>
+                <th className="px-5 py-3 font-medium text-slate-500"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -337,11 +354,20 @@ export default function Admin() {
                       </span>
                     ) : '—'}
                   </td>
+                  <td className="px-5 py-3">
+                    <button
+                      onClick={() => resetUser(u.id)}
+                      className="p-1.5 text-slate-300 hover:text-red-500 cursor-pointer"
+                      title="Resetear historial"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-slate-400">
+                  <td colSpan={7} className="px-5 py-8 text-center text-slate-400">
                     No hay participantes con este filtro.
                   </td>
                 </tr>
