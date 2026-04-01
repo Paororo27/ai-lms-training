@@ -64,7 +64,7 @@ export default function AdminModulos() {
 
   // Create modulo
   const createModulo = async () => {
-    const orden = modulos.length + 1
+    const orden = modulos.length > 0 ? Math.max(...modulos.map(m => m.orden)) + 1 : 1
     const { data, error } = await supabase.from('modulos').insert({
       orden, semana: Math.min(4, Math.ceil(orden / 2)),
       titulo: 'Nuevo modulo', descripcion: '', contenido: {}, duracion_minutos: 30,
@@ -120,7 +120,7 @@ export default function AdminModulos() {
 
   const createLeccion = async () => {
     if (!expandedId) return
-    const orden = lecciones.length + 1
+    const orden = lecciones.length > 0 ? Math.max(...lecciones.map(l => l.orden)) + 1 : 1
     const { data, error } = await supabase.from('lecciones').insert({
       modulo_id: expandedId, orden, titulo: 'Nueva leccion',
       tipo: 'texto', contenido: { texto: '' }, duracion_minutos: 10,
