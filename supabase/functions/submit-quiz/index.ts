@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       const info = correctasMap.get(r.pregunta_id)
       if (!info) continue
 
-      const acerto = r.opcion_seleccionada === info.correctIdx
+      const acerto = r.opcion_seleccionada === info.correctIdx + 1
       if (acerto) correctas++
 
       detalle.push({
@@ -162,11 +162,14 @@ Deno.serve(async (req) => {
         prueba_id: prueba_id,
         numero_intento: numeroIntento,
         puntaje,
-        respuestas: detalle.map(d => ({
-          pregunta_id: d.pregunta_id,
-          seleccionada: d.seleccionada,
-          correcta: d.acerto,
-        })),
+        respuestas: respuestas.map(r => {
+          const info = correctasMap.get(r.pregunta_id)
+          return {
+            pregunta_id: r.pregunta_id,
+            seleccionada: r.opcion_seleccionada,
+            correcta: info ? r.opcion_seleccionada === info.correctIdx + 1 : false,
+          }
+        }),
         preguntas_usadas: preguntaIds,
         aprobado,
       })

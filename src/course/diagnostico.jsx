@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import QuizQuestion from '../components/quiz-question'
 import { ChevronLeft, CheckCircle, ArrowRight } from 'lucide-react'
+import confetti from 'canvas-confetti'
 
 export default function Diagnostico() {
   const { tipo } = useParams()
@@ -20,6 +21,22 @@ export default function Diagnostico() {
   const [yaCompletado, setYaCompletado] = useState(false)
 
   const tipoPrueba = tipo === 'pre' ? 'diagnostico_pre' : 'diagnostico_post'
+
+  useEffect(() => {
+    if (resultado && !yaCompletado && tipoPrueba === 'diagnostico_post') {
+      const end = Date.now() + 3000
+      const interval = setInterval(() => {
+        if (Date.now() > end) return clearInterval(interval)
+        confetti({
+          particleCount: 30,
+          startVelocity: 30,
+          spread: 360,
+          origin: { x: Math.random(), y: Math.random() * 0.4 },
+        })
+      }, 200)
+      return () => clearInterval(interval)
+    }
+  }, [resultado])
   const label = tipo === 'pre' ? 'Diagnostico de entrada' : 'Diagnostico de salida'
 
   useEffect(() => {
