@@ -34,6 +34,9 @@ supabase/usuarios-generados.csv
 # Salesforce DX (no es parte de este proyecto)
 .sfdx/
 
+# Textos fuente para generar markdown de lecciones
+texts/
+
 # Scripts de debug temporales
 supabase/check-policies.mjs
 supabase/debug-jwt.mjs
