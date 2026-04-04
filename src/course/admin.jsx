@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
-import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy, RotateCcw } from 'lucide-react'
+import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy, RotateCcw, Search } from 'lucide-react'
 import { toast } from '../components/toast'
+import ConfirmModal from '../components/confirm-modal'
 import { NavLink } from 'react-router'
 import ProgressBar from '../components/progress-bar'
 
@@ -12,6 +13,8 @@ export default function Admin() {
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('todos')
+  const [search, setSearch] = useState('')
+  const [confirmState, setConfirmState] = useState({ open: false, userId: null })
 
   useEffect(() => {
     loadAdmin()
@@ -73,8 +76,8 @@ export default function Admin() {
       const leccionesCompletadas = userProgreso.length
 
       // Diagnosticos
-      const diagPreScore = diagPre ? bestScores[diagPre.id] : null
-      const diagPostScore = diagPost ? bestScores[diagPost.id] : null
+      const diagPreScore = diagPre ? bestScores[diagPre.id] ?? null : null
+      const diagPostScore = diagPost ? bestScores[diagPost.id] ?? null : null
 
       // Puntaje promedio modular
       const modularScores = pruebasModulares.map(p => bestScores[p.id]).filter(s => s !== undefined)
@@ -116,6 +119,12 @@ export default function Admin() {
         retoEstado: userEntrega?.estado || null,
       }
     })
+
+    // Obtener codigos de usuario
+    const { data: userCodes } = await supabase.rpc('get_user_codes', { p_user_ids: userIds })
+    const codeMap = {}
+    ;(userCodes || []).forEach(u => { codeMap[u.id] = u.code })
+    Object.values(userMap).forEach(u => { u.code = codeMap[u.id] || u.id.slice(0, 8) })
 
     const userList = Object.values(userMap)
 
@@ -171,7 +180,6 @@ export default function Admin() {
   }
 
   const resetUser = async (userId) => {
-    if (!confirm('Borrar TODO el historial de pruebas, progreso y reto de este usuario? Esta accion no se puede deshacer.')) return
     const [r1, r2, r3] = await Promise.all([
       supabase.from('intentos_prueba').delete().eq('usuario_id', userId),
       supabase.from('progreso_usuario').delete().eq('usuario_id', userId),
@@ -185,9 +193,9 @@ export default function Admin() {
     loadAdmin()
   }
 
-  const filteredUsers = filter === 'todos'
-    ? usuarios
-    : usuarios.filter(u => u.estado === filter)
+  const filteredUsers = usuarios
+    .filter(u => filter === 'todos' || u.estado === filter)
+    .filter(u => !search || u.code?.toLowerCase().includes(search.toLowerCase()))
 
   const sorted = [...filteredUsers].sort((a, b) => b.progressPct - a.progressPct)
 
@@ -291,8 +299,18 @@ export default function Admin() {
 
       {/* Tabla de usuarios */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-semibold text-avianca-dark">Participantes</h3>
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
+          <h3 className="font-semibold text-avianca-dark shrink-0">Participantes</h3>
+          <div className="relative max-w-48">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar usuario..."
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-avianca-cyan focus:border-avianca-cyan"
+            />
+          </div>
           <div className="flex gap-1">
             {['todos', 'activo', 'completado', 'bloqueado', 'sin_iniciar'].map(f => (
               <button
@@ -324,7 +342,7 @@ export default function Admin() {
             <tbody className="divide-y divide-slate-100">
               {sorted.map(u => (
                 <tr key={u.id} className={u.bloqueado ? 'bg-red-50' : ''}>
-                  <td className="px-5 py-3 font-mono text-xs text-slate-600">{u.id.slice(0, 8)}...</td>
+                  <td className="px-5 py-3 font-mono text-xs text-slate-600">{u.code}</td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                       u.estado === 'completado' ? 'bg-avianca-green/10 text-avianca-green' :
@@ -356,7 +374,7 @@ export default function Admin() {
                   </td>
                   <td className="px-5 py-3">
                     <button
-                      onClick={() => resetUser(u.id)}
+                      onClick={() => setConfirmState({ open: true, userId: u.id, code: u.code })}
                       className="p-1.5 text-slate-300 hover:text-red-500 cursor-pointer"
                       title="Resetear historial"
                     >
@@ -376,6 +394,19 @@ export default function Admin() {
           </table>
         </div>
       </div>
+
+      <ConfirmModal
+        open={confirmState.open}
+        title="Resetear historial"
+        message={`Se borrara TODO el historial de pruebas, progreso y reto de ${confirmState.code || 'este usuario'}. Esta accion no se puede deshacer.`}
+        confirmLabel="Borrar historial"
+        variant="danger"
+        onConfirm={() => {
+          resetUser(confirmState.userId)
+          setConfirmState({ open: false, userId: null })
+        }}
+        onCancel={() => setConfirmState({ open: false, userId: null })}
+      />
     </div>
   )
 }

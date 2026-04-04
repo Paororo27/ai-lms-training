@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { supabase } from '../../lib/supabase'
 import { ChevronLeft, Plus, Trash2, Pencil, Save, X } from 'lucide-react'
 import { toast } from '../../components/toast'
+import ConfirmModal from '../../components/confirm-modal'
 
 export default function AdminRetos() {
   const navigate = useNavigate()
@@ -10,6 +11,7 @@ export default function AdminRetos() {
   const [editing, setEditing] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [confirmState, setConfirmState] = useState({ open: false, retoId: null })
 
   useEffect(() => { loadRetos() }, [])
 
@@ -47,7 +49,6 @@ export default function AdminRetos() {
   }
 
   const deleteReto = async (id) => {
-    if (!confirm('Eliminar este reto?')) return
     const { error } = await supabase.from('retos').delete().eq('id', id)
     if (error) { toast('Error eliminando reto', 'error'); return }
     setRetos(retos.filter(r => r.id !== id))
@@ -138,7 +139,7 @@ export default function AdminRetos() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button onClick={() => setEditing({ ...reto })} className="p-2 text-slate-400 hover:text-avianca-cyan cursor-pointer"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={() => deleteReto(reto.id)} className="p-2 text-slate-400 hover:text-red-500 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={() => setConfirmState({ open: true, retoId: reto.id })} className="p-2 text-slate-400 hover:text-red-500 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
               </div>
@@ -152,6 +153,19 @@ export default function AdminRetos() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={confirmState.open}
+        title="Eliminar reto"
+        message="Se eliminara este reto. Si algun participante lo tiene asignado, podria causar errores."
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => {
+          deleteReto(confirmState.retoId)
+          setConfirmState({ open: false, retoId: null })
+        }}
+        onCancel={() => setConfirmState({ open: false, retoId: null })}
+      />
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../../lib/supabase'
 import { ChevronLeft, Plus, Trash2, ChevronUp, ChevronDown, Pencil, Save, X, Video, FileText, Wrench, Gamepad2 } from 'lucide-react'
 import { toast } from '../../components/toast'
+import ConfirmModal from '../../components/confirm-modal'
 
 const TIPOS_LECCION = [
   { value: 'video', label: 'Video', icon: Video },
@@ -30,6 +31,7 @@ export default function AdminModulos() {
   const [editingLeccion, setEditingLeccion] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [confirmState, setConfirmState] = useState({ open: false, action: null, message: '' })
 
   useEffect(() => { loadModulos() }, [])
   useEffect(() => { if (expandedId) loadLecciones(expandedId) }, [expandedId])
@@ -95,7 +97,6 @@ export default function AdminModulos() {
 
   // Delete modulo
   const deleteModulo = async (id) => {
-    if (!confirm('Eliminar este modulo y todo su contenido?')) return
     const { error } = await supabase.from('modulos').delete().eq('id', id)
     if (error) { toast('Error eliminando modulo', 'error'); return }
     setModulos(modulos.filter(m => m.id !== id))
@@ -162,7 +163,6 @@ export default function AdminModulos() {
   }
 
   const deleteLeccion = async (id) => {
-    if (!confirm('Eliminar esta leccion?')) return
     const { error } = await supabase.from('lecciones').delete().eq('id', id)
     if (error) { toast('Error eliminando leccion', 'error'); return }
     setLecciones(lecciones.filter(l => l.id !== id))
@@ -204,7 +204,7 @@ export default function AdminModulos() {
               <div className="flex items-center gap-2">
                 <button onClick={() => setEditingModulo(editingModulo?.id === modulo.id ? null : { ...modulo })} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-avianca-cyan/10 text-avianca-cyan hover:bg-avianca-cyan/20 cursor-pointer"><Pencil className="w-3.5 h-3.5" /> Editar</button>
                 <button onClick={() => setExpandedId(expandedId === modulo.id ? null : modulo.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-avianca-dark/5 text-avianca-dark hover:bg-avianca-dark/10 cursor-pointer">{expandedId === modulo.id ? <X className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />} Lecciones</button>
-                <button onClick={() => deleteModulo(modulo.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-50 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setConfirmState({ open: true, action: () => deleteModulo(modulo.id), message: 'Se eliminara este modulo y todo su contenido.' })} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-50 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
 
@@ -254,7 +254,7 @@ export default function AdminModulos() {
                               <p className="text-xs text-slate-400">{leccion.tipo} &middot; {leccion.duracion_minutos} min</p>
                             </div>
                             <button onClick={() => setEditingLeccion({ ...leccion })} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-md bg-avianca-cyan/10 text-avianca-cyan hover:bg-avianca-cyan/20 cursor-pointer"><Pencil className="w-3 h-3" /> Editar</button>
-                            <button onClick={() => deleteLeccion(leccion.id)} className="p-1.5 text-slate-300 hover:text-red-500 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => setConfirmState({ open: true, action: () => deleteLeccion(leccion.id), message: 'Se eliminara esta leccion.' })} className="p-1.5 text-slate-300 hover:text-red-500 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
                           </div>
                         ) : (
                           <div className="space-y-3 bg-avianca-cyan/5 rounded-lg p-4 -mx-1">
@@ -306,6 +306,19 @@ export default function AdminModulos() {
           </div>
         ))}
       </div>
+
+      <ConfirmModal
+        open={confirmState.open}
+        title="Eliminar"
+        message={confirmState.message}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => {
+          confirmState.action?.()
+          setConfirmState({ open: false, action: null, message: '' })
+        }}
+        onCancel={() => setConfirmState({ open: false, action: null, message: '' })}
+      />
     </div>
   )
 }

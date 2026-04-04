@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../../lib/supabase'
 import { ChevronLeft, Plus, Trash2, Pencil, Save, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from '../../components/toast'
+import ConfirmModal from '../../components/confirm-modal'
 
 const TIPOS_PRUEBA = [
   { value: 'modular', label: 'Modular' },
@@ -82,6 +83,7 @@ export default function AdminPruebas() {
   const [editingPregunta, setEditingPregunta] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [confirmState, setConfirmState] = useState({ open: false, action: null, message: '' })
 
   useEffect(() => { loadData() }, [])
   useEffect(() => { if (expandedId) loadPreguntas(expandedId) }, [expandedId])
@@ -136,7 +138,6 @@ export default function AdminPruebas() {
   }
 
   const deletePrueba = async (id) => {
-    if (!confirm('Eliminar esta prueba y todas sus preguntas?')) return
     const { error } = await supabase.from('pruebas').delete().eq('id', id)
     if (error) { toast('Error eliminando prueba', 'error'); return }
     setPruebas(pruebas.filter(p => p.id !== id))
@@ -178,7 +179,6 @@ export default function AdminPruebas() {
 
   const deletePregunta = async () => {
     if (!editingPregunta?.id) return
-    if (!confirm('Eliminar esta pregunta?')) return
     const { error } = await supabase.from('preguntas').delete().eq('id', editingPregunta.id)
     if (error) { toast('Error eliminando pregunta', 'error'); return }
     setPreguntas(preguntas.filter(p => p.id !== editingPregunta.id))
@@ -222,7 +222,7 @@ export default function AdminPruebas() {
                 </div>
                 <button onClick={() => setExpandedId(expandedId === prueba.id ? null : prueba.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-avianca-dark/5 text-avianca-dark hover:bg-avianca-dark/10 cursor-pointer">{expandedId === prueba.id ? <X className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />} Preguntas</button>
                 <button onClick={() => setEditingPrueba(editingPrueba?.id === prueba.id ? null : { ...prueba })} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-avianca-cyan/10 text-avianca-cyan hover:bg-avianca-cyan/20 cursor-pointer"><Pencil className="w-3.5 h-3.5" /> Editar</button>
-                <button onClick={() => deletePrueba(prueba.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-50 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setConfirmState({ open: true, action: () => deletePrueba(prueba.id), message: 'Se eliminara esta prueba y todas sus preguntas.' })} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-50 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
 
               {/* Editar prueba */}
@@ -271,7 +271,7 @@ export default function AdminPruebas() {
                     {preguntas.map((pregunta) => (
                       <div key={pregunta.id}>
                         {editingPregunta?.id === pregunta.id ? (
-                          <PreguntaEditor pregunta={editingPregunta} onChange={setEditingPregunta} onSave={savePregunta} onCancel={() => setEditingPregunta(null)} onDelete={deletePregunta} saving={saving} />
+                          <PreguntaEditor pregunta={editingPregunta} onChange={setEditingPregunta} onSave={savePregunta} onCancel={() => setEditingPregunta(null)} onDelete={() => setConfirmState({ open: true, action: deletePregunta, message: 'Se eliminara esta pregunta.' })} saving={saving} />
                         ) : (
                           <div className="py-2 flex items-start gap-3 group">
                             <div className="flex-1 min-w-0">
@@ -299,6 +299,19 @@ export default function AdminPruebas() {
           )
         })}
       </div>
+
+      <ConfirmModal
+        open={confirmState.open}
+        title="Eliminar"
+        message={confirmState.message}
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={() => {
+          confirmState.action?.()
+          setConfirmState({ open: false, action: null, message: '' })
+        }}
+        onCancel={() => setConfirmState({ open: false, action: null, message: '' })}
+      />
     </div>
   )
 }

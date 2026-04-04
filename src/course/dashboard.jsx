@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import ProgressBar from '../components/progress-bar'
-import { Lock, CheckCircle, ChevronRight, Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart, Trophy, ClipboardCheck, Award, ArrowRight } from 'lucide-react'
+import { Lock, CheckCircle, ChevronRight, ChevronDown, Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart, Trophy, ClipboardCheck, Award, ArrowRight } from 'lucide-react'
 
 const MODULE_ICONS = [Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart]
 const MODULE_COLORS = ['#89D4E1', '#F98013', '#FF3093', '#1D9BF0', '#23C847', '#FF0000', '#B50080', '#FF0000']
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [progreso, setProgreso] = useState({ lecciones: [], intentos: [], entrega: null })
   const [diagData, setDiagData] = useState({ preId: null, postId: null, preCompleted: false, postCompleted: false })
   const [loading, setLoading] = useState(true)
+  const [openWeeks, setOpenWeeks] = useState(null)
 
   useEffect(() => {
     if (!user) return
@@ -108,8 +109,36 @@ export default function Dashboard() {
     ? Math.round(modularScores.reduce((a, b) => a + b, 0) / modularScores.length)
     : null
 
-  const diagPreScore = diagData.preId ? bestScores[diagData.preId] : null
-  const diagPostScore = diagData.postId ? bestScores[diagData.postId] : null
+  const diagPreScore = diagData.preId ? bestScores[diagData.preId] ?? null : null
+  const diagPostScore = diagData.postId ? bestScores[diagData.postId] ?? null : null
+
+  // Agrupar modulos por semana
+  const semanas = []
+  const semanaMap = {}
+  modulos.forEach((modulo, index) => {
+    const sem = modulo.semana
+    if (!semanaMap[sem]) {
+      semanaMap[sem] = { semana: sem, modulos: [] }
+      semanas.push(semanaMap[sem])
+    }
+    semanaMap[sem].modulos.push({ modulo, index })
+  })
+
+  // Inicializar semana activa una sola vez
+  if (openWeeks === null && semanas.length > 0) {
+    const activeWeek = semanas.find(s =>
+      s.modulos.some(({ modulo, index }) => getModuleStatus(modulo, index) === 'disponible')
+    )?.semana ?? semanas[0]?.semana
+    setOpenWeeks(new Set(activeWeek != null ? [activeWeek] : []))
+  }
+
+  const toggleWeek = (sem) => {
+    setOpenWeeks(prev => {
+      const next = new Set(prev)
+      next.has(sem) ? next.delete(sem) : next.add(sem)
+      return next
+    })
+  }
 
   const allDone = completedModulos === totalModulos && diagData.preCompleted && diagData.postCompleted && progreso.entrega?.estado === 'enviado'
   const allModulesComplete = completedModulos === totalModulos
@@ -166,65 +195,88 @@ export default function Dashboard() {
         </button>
       )}
 
-      {/* Grid de Modulos */}
-      <div>
-        <h2 className="text-lg font-bold text-avianca-dark mb-4">Modulos del taller</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {modulos.map((modulo, index) => {
-            const status = getModuleStatus(modulo, index)
-            const Icon = MODULE_ICONS[index] || Sparkles
-            const color = MODULE_COLORS[index] || MODULE_COLORS[0]
-            const prueba = modulo.pruebas?.find(p => p.tipo === 'modular')
-            const score = prueba ? bestScores[prueba.id] : null
+      {/* Modulos agrupados por semana */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-bold text-avianca-dark">Modulos del taller</h2>
+        {semanas.map(({ semana, modulos: semModulos }) => {
+          const isOpen = openWeeks?.has(semana)
+          const completedCount = semModulos.filter(({ modulo, index }) => getModuleStatus(modulo, index) === 'completado').length
+          const allComplete = completedCount === semModulos.length
 
-            return (
+          return (
+            <div key={semana} className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               <button
-                key={modulo.id}
-                onClick={() => status !== 'bloqueado' && navigate(`/course/modulo/${modulo.id}`)}
-                disabled={status === 'bloqueado'}
-                className={`relative text-left rounded-2xl p-5 border transition-all cursor-pointer ${
-                  status === 'completado'
-                    ? 'bg-white border-avianca-green/30 hover:shadow-md'
-                    : status === 'disponible'
-                    ? 'bg-white border-avianca-cyan/30 hover:shadow-md hover:border-avianca-cyan'
-                    : 'bg-slate-100 border-slate-200 opacity-60 cursor-not-allowed'
-                }`}
+                onClick={() => toggleWeek(semana)}
+                className="w-full flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50 transition-colors"
               >
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">
-                  Semana {modulo.semana}
-                </span>
-
-                <div className="flex items-start gap-3 mt-2">
-                  <div
-                    className={`p-2 rounded-xl ${status === 'bloqueado' ? 'bg-slate-200' : ''}`}
-                    style={status !== 'bloqueado' ? { backgroundColor: `${color}15` } : undefined}
-                  >
-                    <Icon
-                      className={`w-5 h-5 ${status === 'bloqueado' ? 'text-slate-400' : ''}`}
-                      style={status !== 'bloqueado' ? { color } : undefined}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-avianca-dark text-sm leading-tight">{modulo.titulo}</h3>
-                    <p className="text-xs text-slate-500 mt-1 line-clamp-2">{modulo.descripcion}</p>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">{modulo.duracion_minutos} min</span>
-                  {status === 'completado' && (
-                    <div className="flex items-center gap-1.5">
-                      {score !== null && <span className="text-xs font-semibold text-avianca-green">{score}%</span>}
-                      <CheckCircle className="w-4 h-4 text-avianca-green" />
-                    </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-avianca-dark">Semana {semana}</span>
+                  <span className="text-xs text-slate-400">{semModulos.length} modulos</span>
+                  {allComplete && <CheckCircle className="w-4 h-4 text-avianca-green" />}
+                  {!allComplete && completedCount > 0 && (
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-avianca-cyan/10 text-avianca-cyan font-medium">{completedCount}/{semModulos.length}</span>
                   )}
-                  {status === 'disponible' && <ChevronRight className="w-4 h-4 text-avianca-cyan" />}
-                  {status === 'bloqueado' && <Lock className="w-4 h-4 text-slate-400" />}
                 </div>
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
               </button>
-            )
-          })}
-        </div>
+
+              {isOpen && (
+                <div className="px-5 pb-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {semModulos.map(({ modulo, index }) => {
+                    const status = getModuleStatus(modulo, index)
+                    const Icon = MODULE_ICONS[index] || Sparkles
+                    const color = MODULE_COLORS[index] || MODULE_COLORS[0]
+                    const prueba = modulo.pruebas?.find(p => p.tipo === 'modular')
+                    const score = prueba ? bestScores[prueba.id] : null
+
+                    return (
+                      <button
+                        key={modulo.id}
+                        onClick={() => status !== 'bloqueado' && navigate(`/course/modulo/${modulo.id}`)}
+                        disabled={status === 'bloqueado'}
+                        className={`relative text-left rounded-xl p-4 border transition-all cursor-pointer ${
+                          status === 'completado'
+                            ? 'bg-white border-avianca-green/30 hover:shadow-md'
+                            : status === 'disponible'
+                            ? 'bg-white border-avianca-cyan/30 hover:shadow-md hover:border-avianca-cyan'
+                            : 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`p-2 rounded-xl ${status === 'bloqueado' ? 'bg-slate-200' : ''}`}
+                            style={status !== 'bloqueado' ? { backgroundColor: `${color}15` } : undefined}
+                          >
+                            <Icon
+                              className={`w-5 h-5 ${status === 'bloqueado' ? 'text-slate-400' : ''}`}
+                              style={status !== 'bloqueado' ? { color } : undefined}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-avianca-dark text-sm leading-tight">{modulo.titulo}</h3>
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{modulo.descripcion}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-xs text-slate-400">{modulo.duracion_minutos} min</span>
+                          {status === 'completado' && (
+                            <div className="flex items-center gap-1.5">
+                              {score !== null && <span className="text-xs font-semibold text-avianca-green">{score}%</span>}
+                              <CheckCircle className="w-4 h-4 text-avianca-green" />
+                            </div>
+                          )}
+                          {status === 'disponible' && <ChevronRight className="w-4 h-4 text-avianca-cyan" />}
+                          {status === 'bloqueado' && <Lock className="w-4 h-4 text-slate-400" />}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* CTA Diagnostico Post */}

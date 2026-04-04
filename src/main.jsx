@@ -18,6 +18,7 @@ const Admin = lazy(() => import('./course/admin'))
 const AdminModulos = lazy(() => import('./course/admin/admin-modulos'))
 const AdminPruebas = lazy(() => import('./course/admin/admin-pruebas'))
 const AdminRetos = lazy(() => import('./course/admin/admin-retos'))
+const NotFound = lazy(() => import('./course/not-found'))
 
 const Loading = () => (
   <div className="min-h-screen flex items-center justify-center bg-avianca-dark">
@@ -78,6 +79,10 @@ const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  {
+    path: '*',
+    element: <Suspense fallback={<Loading />}><NotFound /></Suspense>,
   },
 ])
 
