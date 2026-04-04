@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import { CheckCircle, Circle, Play, FileText, Wrench, Gamepad2, ExternalLink, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
-import Markdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import RichMarkdown from '../components/rich-markdown'
 import 'lite-youtube-embed'
 import 'lite-youtube-embed/src/lite-yt-embed.css'
 
@@ -200,16 +199,14 @@ export default function Modulo() {
                 )}
 
                 {current.contenido?.texto && (
-                  <div className="prose prose-slate prose-sm max-w-none">
-                    <Markdown remarkPlugins={[remarkGfm]}>{current.contenido.texto}</Markdown>
-                  </div>
+                  <RichMarkdown>{current.contenido.texto}</RichMarkdown>
                 )}
 
                 {current.tipo === 'ejercicio' && current.contenido?.instrucciones && (
                   <div className="mt-4 bg-avianca-cyan/5 border border-avianca-cyan/20 rounded-xl p-5">
                     <h3 className="font-semibold text-avianca-dark text-sm mb-2">Instrucciones del ejercicio</h3>
-                    <div className="text-sm text-slate-600 prose prose-sm max-w-none">
-                      <Markdown remarkPlugins={[remarkGfm]}>{current.contenido.instrucciones}</Markdown>
+                    <div className="text-sm text-slate-600">
+                      <RichMarkdown>{current.contenido.instrucciones}</RichMarkdown>
                     </div>
                   </div>
                 )}
