@@ -8,17 +8,22 @@ import ConfirmModal from '../../components/confirm-modal'
 export default function AdminRetos() {
   const navigate = useNavigate()
   const [retos, setRetos] = useState([])
+  const [modulos, setModulos] = useState([])
   const [editing, setEditing] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [confirmState, setConfirmState] = useState({ open: false, retoId: null })
 
-  useEffect(() => { loadRetos() }, [])
+  useEffect(() => { loadData() }, [])
 
-  const loadRetos = async () => {
-    const { data, error } = await supabase.from('retos').select('*').order('id')
-    if (error) toast('Error cargando retos', 'error')
-    setRetos(data || [])
+  const loadData = async () => {
+    const [retosRes, modulosRes] = await Promise.all([
+      supabase.from('retos').select('*').order('id'),
+      supabase.from('modulos').select('id, titulo').order('orden'),
+    ])
+    if (retosRes.error || modulosRes.error) toast('Error cargando datos', 'error')
+    setRetos(retosRes.data || [])
+    setModulos(modulosRes.data || [])
     setLoading(false)
   }
 
@@ -40,6 +45,7 @@ export default function AdminRetos() {
     const { data: updated, error } = await supabase.from('retos').update({
       titulo: editing.titulo, escenario: editing.escenario,
       criterios_evaluacion: editing.criterios_evaluacion,
+      modulo_id: editing.modulo_id || null,
     }).eq('id', editing.id).select()
     if (error || !updated?.length) { toast(error?.message || 'No se pudo guardar', 'error'); setSaving(false); return }
     setRetos(retos.map(r => r.id === editing.id ? { ...r, ...editing } : r))
@@ -55,7 +61,6 @@ export default function AdminRetos() {
     toast('Reto eliminado')
   }
 
-  // Criterios dinamicos
   const addCriterio = () => {
     if (!editing) return
     setEditing({ ...editing, criterios_evaluacion: [...(editing.criterios_evaluacion || []), ''] })
@@ -73,6 +78,9 @@ export default function AdminRetos() {
     setEditing({ ...editing, criterios_evaluacion: editing.criterios_evaluacion.filter((_, i) => i !== idx) })
   }
 
+  // Modulos que ya tienen reto asignado (excluir el que se esta editando)
+  const usedModuloIds = new Set(retos.filter(r => r.modulo_id && r.id !== editing?.id).map(r => r.modulo_id))
+
   if (loading) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-avianca-cyan" /></div>
 
   return (
@@ -83,7 +91,7 @@ export default function AdminRetos() {
             <ChevronLeft className="w-4 h-4" /> Admin
           </button>
           <h1 className="text-xl font-bold text-avianca-dark">Gestion de Retos</h1>
-          <p className="text-sm text-slate-500">{retos.length} retos en el pool</p>
+          <p className="text-sm text-slate-500">{retos.length} retos</p>
         </div>
         <button onClick={createReto} className="flex items-center gap-1.5 px-4 py-2 bg-avianca-cyan text-white text-sm font-medium rounded-lg hover:opacity-90 cursor-pointer">
           <Plus className="w-4 h-4" /> Crear reto
@@ -91,61 +99,88 @@ export default function AdminRetos() {
       </div>
 
       <div className="space-y-3">
-        {retos.map((reto) => (
-          <div key={reto.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-            {editing?.id === reto.id ? (
-              <div className="p-5 space-y-3">
-                <input value={editing.titulo} onChange={e => setEditing({ ...editing, titulo: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium" placeholder="Titulo del reto" />
+        {retos.map((reto) => {
+          const moduloNombre = modulos.find(m => m.id === reto.modulo_id)?.titulo
 
-                <div>
-                  <label className="text-xs font-semibold text-slate-500 block mb-1">Escenario</label>
-                  <textarea value={editing.escenario} onChange={e => setEditing({ ...editing, escenario: e.target.value })} rows={6} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Describe el caso practico que el participante debe resolver..." />
-                </div>
+          return (
+            <div key={reto.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+              {editing?.id === reto.id ? (
+                <div className="p-5 space-y-3">
+                  <input value={editing.titulo} onChange={e => setEditing({ ...editing, titulo: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-medium" placeholder="Titulo del reto" />
 
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-semibold text-slate-500">Criterios de evaluacion</label>
-                    <button onClick={addCriterio} className="text-xs text-avianca-cyan hover:text-avianca-dark cursor-pointer">+ Agregar criterio</button>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 block mb-1">Modulo vinculado</label>
+                    <select
+                      value={editing.modulo_id || ''}
+                      onChange={e => setEditing({ ...editing, modulo_id: e.target.value ? Number(e.target.value) : null })}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                    >
+                      <option value="">Sin modulo</option>
+                      {modulos.map(m => (
+                        <option key={m.id} value={m.id} disabled={usedModuloIds.has(m.id)}>
+                          {m.titulo}{usedModuloIds.has(m.id) ? ' (ya tiene reto)' : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div className="space-y-2">
-                    {(editing.criterios_evaluacion || []).map((criterio, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 bg-avianca-orange rounded-full shrink-0" />
-                        <input value={criterio} onChange={e => updateCriterio(idx, e.target.value)} className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm" placeholder="Criterio..." />
-                        <button onClick={() => removeCriterio(idx)} className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-500 block mb-1">Escenario</label>
+                    <textarea value={editing.escenario} onChange={e => setEditing({ ...editing, escenario: e.target.value })} rows={6} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm" placeholder="Describe el caso practico que el participante debe resolver..." />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-semibold text-slate-500">Criterios de evaluacion</label>
+                      <button onClick={addCriterio} className="text-xs text-avianca-cyan hover:text-avianca-dark cursor-pointer">+ Agregar criterio</button>
+                    </div>
+                    <div className="space-y-2">
+                      {(editing.criterios_evaluacion || []).map((criterio, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-avianca-orange rounded-full shrink-0" />
+                          <input value={criterio} onChange={e => updateCriterio(idx, e.target.value)} className="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-sm" placeholder="Criterio..." />
+                          <button onClick={() => removeCriterio(idx)} className="p-1 text-slate-400 hover:text-red-500 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={saveReto} disabled={saving} className="px-4 py-2 bg-avianca-green text-white text-sm rounded-lg hover:opacity-90 flex items-center gap-1 cursor-pointer"><Save className="w-3.5 h-3.5" /> {saving ? 'Guardando...' : 'Guardar'}</button>
+                    <button onClick={() => setEditing(null)} className="px-4 py-2 text-slate-500 text-sm cursor-pointer">Cancelar</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-avianca-dark">{reto.titulo}</h3>
+                        {moduloNombre ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-avianca-cyan/10 text-avianca-cyan font-medium">{moduloNombre}</span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 font-medium">Sin modulo</span>
+                        )}
                       </div>
-                    ))}
+                      <p className="text-sm text-slate-500 mt-1 line-clamp-3">{reto.escenario}</p>
+                      {reto.criterios_evaluacion?.length > 0 && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          {reto.criterios_evaluacion.map((c, i) => (
+                            <span key={i} className="text-[11px] px-2 py-0.5 rounded bg-avianca-orange/10 text-avianca-orange">{c}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => setEditing({ ...reto })} className="p-2 text-slate-400 hover:text-avianca-cyan cursor-pointer"><Pencil className="w-4 h-4" /></button>
+                      <button onClick={() => setConfirmState({ open: true, retoId: reto.id })} className="p-2 text-slate-400 hover:text-red-500 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button onClick={saveReto} disabled={saving} className="px-4 py-2 bg-avianca-green text-white text-sm rounded-lg hover:opacity-90 flex items-center gap-1 cursor-pointer"><Save className="w-3.5 h-3.5" /> {saving ? 'Guardando...' : 'Guardar'}</button>
-                  <button onClick={() => setEditing(null)} className="px-4 py-2 text-slate-500 text-sm cursor-pointer">Cancelar</button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-avianca-dark">{reto.titulo}</h3>
-                    <p className="text-sm text-slate-500 mt-1 line-clamp-3">{reto.escenario}</p>
-                    {reto.criterios_evaluacion?.length > 0 && (
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        {reto.criterios_evaluacion.map((c, i) => (
-                          <span key={i} className="text-[11px] px-2 py-0.5 rounded bg-avianca-orange/10 text-avianca-orange">{c}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => setEditing({ ...reto })} className="p-2 text-slate-400 hover:text-avianca-cyan cursor-pointer"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={() => setConfirmState({ open: true, retoId: reto.id })} className="p-2 text-slate-400 hover:text-red-500 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          )
+        })}
 
         {retos.length === 0 && (
           <div className="text-center py-12 text-slate-400">
@@ -157,7 +192,7 @@ export default function AdminRetos() {
       <ConfirmModal
         open={confirmState.open}
         title="Eliminar reto"
-        message="Se eliminara este reto. Si algun participante lo tiene asignado, podria causar errores."
+        message="Se eliminara este reto y las entregas asociadas."
         confirmLabel="Eliminar"
         variant="danger"
         onConfirm={() => {
