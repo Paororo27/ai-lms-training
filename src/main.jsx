@@ -12,7 +12,6 @@ const Dashboard = lazy(() => import('./course/dashboard'))
 const Modulo = lazy(() => import('./course/modulo'))
 const Prueba = lazy(() => import('./course/prueba'))
 const Diagnostico = lazy(() => import('./course/diagnostico'))
-const Reto = lazy(() => import('./course/reto'))
 const Certificado = lazy(() => import('./course/certificado'))
 const Admin = lazy(() => import('./course/admin'))
 const AdminModulos = lazy(() => import('./course/admin/admin-modulos'))
@@ -54,7 +53,6 @@ const router = createBrowserRouter([
           { path: 'modulo/:id', element: <Suspense fallback={<Loading />}><Modulo /></Suspense> },
           { path: 'modulo/:id/prueba', element: <Suspense fallback={<Loading />}><Prueba /></Suspense> },
           { path: 'diagnostico/:tipo', element: <Suspense fallback={<Loading />}><Diagnostico /></Suspense> },
-          { path: 'reto', element: <Suspense fallback={<Loading />}><Reto /></Suspense> },
           { path: 'certificado', element: <Suspense fallback={<Loading />}><Certificado /></Suspense> },
         ],
       },

@@ -21,12 +21,13 @@ export default function Admin() {
   }, [])
 
   const loadAdmin = async () => {
-    const [modulosRes, pruebasRes, intentosRes, progresoRes, entregasRes] = await Promise.all([
+    const [modulosRes, pruebasRes, intentosRes, progresoRes, entregasRes, retosRes] = await Promise.all([
       supabase.from('modulos').select('id, titulo, orden, lecciones(id)').order('orden'),
       supabase.from('pruebas').select('id, tipo, titulo, modulo_id, puntaje_aprobatorio'),
       supabase.from('intentos_prueba').select('usuario_id, prueba_id, puntaje, aprobado, numero_intento'),
       supabase.from('progreso_usuario').select('usuario_id, leccion_id, completado'),
-      supabase.from('entregas_reto').select('usuario_id, estado'),
+      supabase.from('entregas_reto').select('usuario_id, reto_id, estado'),
+      supabase.from('retos').select('id, modulo_id').not('modulo_id', 'is', null),
     ])
 
     const modulos = modulosRes.data || []
@@ -34,6 +35,7 @@ export default function Admin() {
     const intentos = intentosRes.data || []
     const progreso = progresoRes.data || []
     const entregas = entregasRes.data || []
+    const retosConModulo = retosRes.data || []
 
     const pruebasModulares = pruebas.filter(p => p.tipo === 'modular')
     const diagPre = pruebas.find(p => p.tipo === 'diagnostico_pre')
@@ -50,7 +52,7 @@ export default function Admin() {
     userIds.forEach(uid => {
       const userIntentos = intentos.filter(i => i.usuario_id === uid)
       const userProgreso = progreso.filter(p => p.usuario_id === uid && p.completado)
-      const userEntrega = entregas.find(e => e.usuario_id === uid)
+      const userEntregas = entregas.filter(e => e.usuario_id === uid)
 
       // Mejores puntajes por prueba
       const bestScores = {}
@@ -85,9 +87,14 @@ export default function Admin() {
         ? Math.round(modularScores.reduce((a, b) => a + b, 0) / modularScores.length)
         : null
 
+      // Retos enviados
+      const retosEnviados = retosConModulo.filter(r =>
+        userEntregas.some(e => e.reto_id === r.id && e.estado === 'enviado')
+      ).length
+
       // Estado general
       let estado = 'activo'
-      if (aprobadas === pruebasModulares.length && userEntrega?.estado === 'enviado') {
+      if (aprobadas === pruebasModulares.length && retosEnviados === retosConModulo.length) {
         estado = 'completado'
       } else if (bloqueado) {
         estado = 'bloqueado'
@@ -96,11 +103,10 @@ export default function Admin() {
       }
 
       // Progreso %
-      const totalSteps = pruebasModulares.length + 3 // modulos + diag pre + diag post + reto
-      let completedSteps = aprobadas
+      const totalSteps = pruebasModulares.length + retosConModulo.length + 2 // pruebas + retos + diag pre + diag post
+      let completedSteps = aprobadas + retosEnviados
       if (diagPreScore !== null) completedSteps++
       if (diagPostScore !== null) completedSteps++
-      if (userEntrega?.estado === 'enviado') completedSteps++
       const progressPct = Math.round((completedSteps / totalSteps) * 100)
 
       userMap[uid] = {
@@ -116,7 +122,8 @@ export default function Admin() {
         mejora: diagPreScore !== null && diagPostScore !== null ? diagPostScore - diagPreScore : null,
         leccionesCompletadas,
         totalLecciones,
-        retoEstado: userEntrega?.estado || null,
+        retosEnviados,
+        totalRetos: retosConModulo.length,
       }
     })
 

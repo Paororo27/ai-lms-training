@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import ProgressBar from '../components/progress-bar'
-import { Lock, CheckCircle, ChevronRight, ChevronDown, Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart, Trophy, ClipboardCheck, Award, ArrowRight } from 'lucide-react'
+import { Lock, CheckCircle, ChevronRight, ChevronDown, Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart, ClipboardCheck, Award, ArrowRight } from 'lucide-react'
 
 const MODULE_ICONS = [Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart]
 const MODULE_COLORS = ['#89D4E1', '#F98013', '#FF3093', '#1D9BF0', '#23C847', '#FF0000', '#B50080', '#FF0000']
@@ -12,7 +12,8 @@ export default function Dashboard() {
   const { user, role } = useAuth()
   const navigate = useNavigate()
   const [modulos, setModulos] = useState([])
-  const [progreso, setProgreso] = useState({ lecciones: [], intentos: [], entrega: null })
+  const [progreso, setProgreso] = useState({ lecciones: [], intentos: [], entregas: [] })
+  const [retos, setRetos] = useState([])
   const [diagData, setDiagData] = useState({ preId: null, postId: null, preCompleted: false, postCompleted: false })
   const [loading, setLoading] = useState(true)
   const [openWeeks, setOpenWeeks] = useState(null)
@@ -23,12 +24,13 @@ export default function Dashboard() {
   }, [user])
 
   const loadData = async () => {
-    const [modulosRes, leccionesRes, intentosRes, entregaRes, diagsRes] = await Promise.all([
+    const [modulosRes, leccionesRes, intentosRes, entregasRes, diagsRes, retosRes] = await Promise.all([
       supabase.from('modulos').select('*, lecciones(id), pruebas(id, tipo, puntaje_aprobatorio)').order('orden'),
       supabase.from('progreso_usuario').select('leccion_id, completado').eq('usuario_id', user.id),
       supabase.from('intentos_prueba').select('prueba_id, puntaje, aprobado, numero_intento').eq('usuario_id', user.id),
-      supabase.from('entregas_reto').select('estado').eq('usuario_id', user.id).maybeSingle(),
+      supabase.from('entregas_reto').select('reto_id, estado').eq('usuario_id', user.id),
       supabase.from('pruebas').select('id, tipo').in('tipo', ['diagnostico_pre', 'diagnostico_post']),
+      supabase.from('retos').select('id, modulo_id').not('modulo_id', 'is', null),
     ])
 
     const intentos = intentosRes.data || []
@@ -37,10 +39,11 @@ export default function Dashboard() {
     const post = diags.find(d => d.tipo === 'diagnostico_post')
 
     setModulos(modulosRes.data || [])
+    setRetos(retosRes.data || [])
     setProgreso({
       lecciones: leccionesRes.data || [],
       intentos,
-      entrega: entregaRes.data,
+      entregas: entregasRes.data || [],
     })
     setDiagData({
       preId: pre?.id || null,
@@ -81,8 +84,12 @@ export default function Dashboard() {
     const allLessonsComplete = moduleLessons.length > 0 && moduleLessons.every(id => completedLessons.has(id))
     const modulePrueba = modulo.pruebas?.find(p => p.tipo === 'modular')
     const pruebaAprobada = modulePrueba ? approvedTests.has(modulePrueba.id) : false
+    const moduleReto = retos.find(r => r.modulo_id === modulo.id)
+    const retoEnviado = moduleReto
+      ? progreso.entregas.some(e => e.reto_id === moduleReto.id && e.estado === 'enviado')
+      : true
 
-    if (allLessonsComplete && pruebaAprobada) return 'completado'
+    if (allLessonsComplete && retoEnviado && pruebaAprobada) return 'completado'
     if (isAdmin) return 'disponible'
     if (index === 0) return diagData.preCompleted ? 'disponible' : 'bloqueado'
 
@@ -97,14 +104,19 @@ export default function Dashboard() {
 
   const totalModulos = modulos.length
   const completedModulos = modulos.filter((m, i) => getModuleStatus(m, i) === 'completado').length
-  const totalSteps = totalModulos + 3
-  let completedSteps = completedModulos
+
+  // Progreso granular: pruebas aprobadas + retos enviados + diagnosticos
+  const pruebasModulares = modulos.flatMap(m => m.pruebas?.filter(p => p.tipo === 'modular') || [])
+  const pruebasAprobadas = pruebasModulares.filter(p => approvedTests.has(p.id)).length
+  const retosEnviados = retos.filter(r => progreso.entregas.some(e => e.reto_id === r.id && e.estado === 'enviado')).length
+  const totalSteps = pruebasModulares.length + retos.length + 2
+  let completedSteps = pruebasAprobadas + retosEnviados
   if (diagData.preCompleted) completedSteps++
   if (diagData.postCompleted) completedSteps++
-  if (progreso.entrega?.estado === 'enviado') completedSteps++
   const progressPercent = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0
 
-  const modularScores = Object.values(bestScores).filter((_, i) => i < totalModulos)
+  const modularPruebaIds = new Set(pruebasModulares.map(p => p.id))
+  const modularScores = [...modularPruebaIds].map(id => bestScores[id]).filter(s => s !== undefined)
   const avgScore = modularScores.length > 0
     ? Math.round(modularScores.reduce((a, b) => a + b, 0) / modularScores.length)
     : null
@@ -140,10 +152,9 @@ export default function Dashboard() {
     })
   }
 
-  const allDone = completedModulos === totalModulos && diagData.preCompleted && diagData.postCompleted && progreso.entrega?.estado === 'enviado'
+  const allDone = completedModulos === totalModulos && diagData.preCompleted && diagData.postCompleted
   const allModulesComplete = completedModulos === totalModulos
   const canDoDiagPost = allModulesComplete && !diagData.postCompleted
-  const canDoReto = diagData.postCompleted && (!progreso.entrega || progreso.entrega.estado === 'borrador')
 
   return (
     <div className="space-y-8">
@@ -296,26 +307,7 @@ export default function Dashboard() {
         </button>
       )}
 
-      {/* CTA Reto */}
-      {canDoReto && (
-        <button
-          onClick={() => navigate('/course/reto')}
-          className="w-full bg-gradient-to-r from-avianca-orange to-avianca-red text-white rounded-2xl p-6 text-left hover:opacity-95 transition-opacity cursor-pointer"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <Trophy className="w-5 h-5 mb-2" />
-              <p className="font-bold text-lg">Reto final</p>
-              <p className="text-white/80 text-sm mt-1">
-                {progreso.entrega?.estado === 'borrador'
-                  ? 'Tienes un borrador en progreso. Continua tu reto.'
-                  : 'Pon a prueba todo lo que aprendiste con un caso practico.'}
-              </p>
-            </div>
-            <ChevronRight className="w-6 h-6" />
-          </div>
-        </button>
-      )}
+
 
       {/* CTA Certificado */}
       {allDone && (

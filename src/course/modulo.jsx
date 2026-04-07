@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
-import { CheckCircle, Circle, Play, FileText, Wrench, Gamepad2, ExternalLink, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react'
+import { CheckCircle, Circle, Play, FileText, Wrench, Gamepad2, ExternalLink, ChevronLeft, ChevronRight, ArrowRight, Trophy, Link } from 'lucide-react'
+import { toast } from '../components/toast'
+import ConfirmModal from '../components/confirm-modal'
 import RichMarkdown from '../components/rich-markdown'
 import 'lite-youtube-embed'
 import 'lite-youtube-embed/src/lite-yt-embed.css'
 
 export default function Modulo() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, userCode } = useAuth()
   const navigate = useNavigate()
   const [modulo, setModulo] = useState(null)
   const [lecciones, setLecciones] = useState([])
@@ -18,17 +20,25 @@ export default function Modulo() {
   const [loading, setLoading] = useState(true)
   const [marking, setMarking] = useState(false)
 
+  // Reto state
+  const [reto, setReto] = useState(null)
+  const [entrega, setEntrega] = useState(null)
+  const [urlEntrega, setUrlEntrega] = useState('')
+  const [savingReto, setSavingReto] = useState(false)
+  const [showRetoConfirm, setShowRetoConfirm] = useState(false)
+  const [showingReto, setShowingReto] = useState(false)
+
   useEffect(() => {
     if (!user || !id) return
     loadModulo()
   }, [user, id])
 
   const loadModulo = async () => {
-    const [moduloRes, leccionesRes, progresoRes] = await Promise.all([
+    const [moduloRes, leccionesRes, progresoRes, retoRes] = await Promise.all([
       supabase.from('modulos').select('*').eq('id', id).single(),
       supabase.from('lecciones').select('*').eq('modulo_id', id).order('orden'),
-      supabase.from('progreso_usuario').select('leccion_id, completado')
-        .eq('usuario_id', user.id),
+      supabase.from('progreso_usuario').select('leccion_id, completado').eq('usuario_id', user.id),
+      supabase.from('retos').select('*').eq('modulo_id', id).maybeSingle(),
     ])
 
     setModulo(moduloRes.data)
@@ -38,7 +48,21 @@ export default function Modulo() {
     ;(progresoRes.data || []).forEach(p => { map[p.leccion_id] = p.completado })
     setProgresoMap(map)
 
-    // Ir a la primera leccion no completada
+    // Cargar reto y entrega
+    if (retoRes.data) {
+      setReto(retoRes.data)
+      const { data: entregaData } = await supabase
+        .from('entregas_reto')
+        .select('*')
+        .eq('usuario_id', user.id)
+        .eq('reto_id', retoRes.data.id)
+        .maybeSingle()
+      if (entregaData) {
+        setEntrega(entregaData)
+        setUrlEntrega(entregaData.url_entrega || '')
+      }
+    }
+
     const firstIncomplete = (leccionesRes.data || []).findIndex(l => !map[l.id])
     setCurrentIdx(firstIncomplete >= 0 ? firstIncomplete : 0)
     setLoading(false)
@@ -54,6 +78,29 @@ export default function Modulo() {
       setProgresoMap(prev => ({ ...prev, [leccionId]: true }))
     }
     setMarking(false)
+  }
+
+  // Reto actions
+  const retoEnviado = entrega?.estado === 'enviado'
+  const moduloOrder = modulo?.orden || 1
+  const nombreArchivo = `${userCode}_RETO${moduloOrder}_MODULO_${moduloOrder}`
+
+  const handleSubmitReto = async () => {
+    if (!reto || !urlEntrega.trim()) return
+    setSavingReto(true)
+
+    const payload = {
+      usuario_id: user.id, reto_id: reto.id,
+      url_entrega: urlEntrega.trim(), nombre_archivo: nombreArchivo,
+      estado: 'enviado', submitted_at: new Date().toISOString(),
+    }
+    const { error } = await supabase.from('entregas_reto').upsert(payload, { onConflict: 'usuario_id,reto_id' })
+    if (error) { toast('Error al enviar reto', 'error'); setSavingReto(false); return }
+
+    setEntrega({ ...payload })
+    setShowRetoConfirm(false)
+    setSavingReto(false)
+    toast('Reto enviado')
   }
 
   if (loading) {
@@ -72,6 +119,7 @@ export default function Modulo() {
   const isComplete = current ? progresoMap[current.id] : false
   const allComplete = lecciones.every(l => progresoMap[l.id])
   const completedCount = lecciones.filter(l => progresoMap[l.id]).length
+  const canGoToPrueba = reto ? (allComplete && retoEnviado) : allComplete
 
   const TIPO_ICONS = { video: Play, texto: FileText, ejercicio: Wrench, recurso_externo: Gamepad2 }
   const TIPO_LABELS = { video: 'Video', texto: 'Lectura', ejercicio: 'Ejercicio practico', recurso_externo: 'Actividad interactiva' }
@@ -92,7 +140,7 @@ export default function Modulo() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* Sidebar: lista de lecciones */}
+        {/* Sidebar: lista de lecciones + reto */}
         <div className="lg:w-64 shrink-0">
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100">
@@ -101,13 +149,13 @@ export default function Modulo() {
             <nav className="divide-y divide-slate-100">
               {lecciones.map((leccion, idx) => {
                 const done = progresoMap[leccion.id]
-                const isCurrent = idx === currentIdx
+                const isCurrent = !showingReto && idx === currentIdx
                 const Icon = TIPO_ICONS[leccion.tipo] || FileText
 
                 return (
                   <button
                     key={leccion.id}
-                    onClick={() => setCurrentIdx(idx)}
+                    onClick={() => { setCurrentIdx(idx); setShowingReto(false) }}
                     className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
                       isCurrent ? 'bg-avianca-cyan/10' : 'hover:bg-slate-50'
                     }`}
@@ -128,11 +176,36 @@ export default function Modulo() {
                   </button>
                 )
               })}
+
+              {/* Reto en sidebar */}
+              {reto && (
+                <button
+                  onClick={() => allComplete && setShowingReto(true)}
+                  disabled={!allComplete}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors cursor-pointer ${
+                    showingReto ? 'bg-avianca-cyan/10' : allComplete ? 'hover:bg-slate-50' : 'opacity-50 cursor-not-allowed'
+                  }`}
+                >
+                  {retoEnviado ? (
+                    <CheckCircle className="w-4 h-4 text-avianca-green shrink-0" />
+                  ) : (
+                    <Circle className={`w-4 h-4 shrink-0 ${showingReto ? 'text-avianca-cyan' : 'text-slate-300'}`} />
+                  )}
+                  <div className="min-w-0">
+                    <p className={`text-sm truncate ${showingReto ? 'font-semibold text-avianca-dark' : 'text-slate-600'}`}>
+                      Reto
+                    </p>
+                    <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                      <Trophy className="w-3 h-3" /> Entrega OneDrive
+                    </p>
+                  </div>
+                </button>
+              )}
             </nav>
           </div>
 
           {/* Boton prueba */}
-          {allComplete && (
+          {canGoToPrueba && (
             <button
               onClick={() => navigate(`/course/modulo/${id}/prueba`)}
               className="w-full mt-3 py-3 bg-gradient-to-r from-avianca-red to-avianca-magenta text-white font-semibold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -143,7 +216,74 @@ export default function Modulo() {
         </div>
 
         {/* Contenido principal */}
-        {current && (
+        {showingReto && reto ? (
+          <div className="flex-1 min-w-0">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+              <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-avianca-orange" />
+                <span className="text-xs font-medium text-slate-500">Reto del modulo</span>
+              </div>
+
+              <div className="px-6 pt-5 pb-4">
+                <h2 className="text-lg font-bold text-avianca-dark">{reto.titulo}</h2>
+              </div>
+
+              <div className="px-6 pb-6 space-y-5">
+                <p className="text-slate-700 leading-relaxed">{reto.escenario}</p>
+
+                {reto.criterios_evaluacion?.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-avianca-dark mb-2">Criterios de evaluacion</h3>
+                    <ul className="space-y-1.5">
+                      {reto.criterios_evaluacion.map((c, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-avianca-orange shrink-0" />
+                          {c}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {retoEnviado ? (
+                  <div className="bg-avianca-green/5 border border-avianca-green/20 rounded-xl p-5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-5 h-5 text-avianca-green" />
+                      <p className="font-semibold text-avianca-dark">Reto enviado</p>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-1">Archivo: <span className="font-mono">{entrega.nombre_archivo}</span></p>
+                    <a
+                      href={entrega.url_entrega}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-avianca-blue hover:underline flex items-center gap-1"
+                    >
+                      <Link className="w-3.5 h-3.5" /> {entrega.url_entrega}
+                    </a>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold text-avianca-dark block">Link de OneDrive</label>
+                    <input
+                      type="url"
+                      value={urlEntrega}
+                      onChange={e => setUrlEntrega(e.target.value)}
+                      placeholder="https://onedrive.live.com/..."
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-avianca-cyan focus:border-transparent"
+                    />
+                    <button
+                      onClick={() => setShowRetoConfirm(true)}
+                      disabled={!urlEntrega.trim().startsWith('https://') || savingReto}
+                      className="px-6 py-2.5 bg-gradient-to-r from-avianca-red to-avianca-magenta text-white font-semibold rounded-xl hover:opacity-90 disabled:opacity-40 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <Trophy className="w-4 h-4" /> Enviar reto
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : current && (
           <div className="flex-1 min-w-0">
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
               {/* Tipo badge */}
@@ -242,12 +382,31 @@ export default function Modulo() {
                       Siguiente <ChevronRight className="w-4 h-4" />
                     </button>
                   )}
+
+                  {currentIdx === lecciones.length - 1 && allComplete && reto && !retoEnviado && (
+                    <button
+                      onClick={() => setShowingReto(true)}
+                      className="px-4 py-2 text-sm text-avianca-orange hover:text-avianca-dark flex items-center gap-1 cursor-pointer"
+                    >
+                      Ir al reto <Trophy className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={showRetoConfirm}
+        title="Enviar reto"
+        message="Una vez enviado, no podras modificar tu entrega. Asegurate de que el link de OneDrive sea correcto."
+        confirmLabel="Enviar reto"
+        variant="default"
+        onConfirm={handleSubmitReto}
+        onCancel={() => setShowRetoConfirm(false)}
+      />
     </div>
   )
 }
