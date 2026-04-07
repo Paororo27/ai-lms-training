@@ -304,7 +304,7 @@ export default function Modulo() {
               <div className="px-6 pb-6">
                 {current.tipo === 'video' && current.contenido?.media_url && (
                   <div className="mb-4 rounded-xl overflow-hidden">
-                    <lite-youtube videoid={current.contenido.media_url} />
+                    <lite-youtube key={current.id} videoid={current.contenido.media_url} />
                   </div>
                 )}
 
