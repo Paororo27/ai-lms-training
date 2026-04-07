@@ -31,7 +31,7 @@ ON CONFLICT (orden) DO UPDATE SET semana = EXCLUDED.semana, titulo = EXCLUDED.ti
 -- PART 2: Eliminar lecciones existentes de modulos 2-6
 -- ============================================================
 
-DELETE FROM lecciones WHERE modulo_id IN (SELECT id FROM modulos WHERE orden IN (2, 3, 4, 5, 6));
+DELETE FROM lecciones WHERE modulo_id IN (SELECT id FROM modulos WHERE orden IN (2, 3, 4, 5, 6, 7, 8));
 
 -- ============================================================
 -- PART 3: Insertar lecciones para cada modulo
