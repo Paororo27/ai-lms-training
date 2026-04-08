@@ -134,7 +134,7 @@ export default function Certificado() {
       // Duracion
       doc.setFontSize(8)
       doc.setTextColor(120, 120, 120)
-      doc.text('Programa de 4 semanas  |  4 horas de formacion  |  6 modulos + reto final', w / 2, h - 25, { align: 'center' })
+      doc.text('Programa de 4 semanas  |  4 horas de formacion  |  7 modulos + reto final', w / 2, h - 25, { align: 'center' })
 
       doc.save(`certificado-copilot-${userCode}.pdf`)
     } catch (e) {
