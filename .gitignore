@@ -31,6 +31,12 @@ dist-ssr
 # Usuarios generados (contiene contraseñas)
 supabase/usuarios-generados.csv
 
+# Supabase CLI temp (credenciales post-link)
+supabase/.temp/
+
+# Dump temporal de produccion
+supabase/dump_produccion.sql
+
 # Salesforce DX (no es parte de este proyecto)
 .sfdx/
 
