@@ -11,7 +11,7 @@ import 'lite-youtube-embed/src/lite-yt-embed.css'
 
 export default function Modulo() {
   const { id } = useParams()
-  const { user, userCode } = useAuth()
+  const { user, userCode, role } = useAuth()
   const navigate = useNavigate()
   const [modulo, setModulo] = useState(null)
   const [lecciones, setLecciones] = useState([])
@@ -40,6 +40,12 @@ export default function Modulo() {
       supabase.from('progreso_usuario').select('leccion_id, completado').eq('usuario_id', user.id),
       supabase.from('retos').select('*').eq('modulo_id', id).maybeSingle(),
     ])
+
+    if (!moduloRes.data || (!moduloRes.data.disponible && role !== 'admin')) {
+      navigate('/course', { replace: true })
+      toast('Este modulo aun no esta disponible', 'error')
+      return
+    }
 
     setModulo(moduloRes.data)
     setLecciones(leccionesRes.data || [])

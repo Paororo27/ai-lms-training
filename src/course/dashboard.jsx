@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import ProgressBar from '../components/progress-bar'
-import { Lock, CheckCircle, ChevronRight, ChevronDown, Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart, ClipboardCheck, Award, ArrowRight } from 'lucide-react'
+import { Lock, CheckCircle, ChevronRight, ChevronDown, Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart, ClipboardCheck, Award, ArrowRight, Clock } from 'lucide-react'
 
 const MODULE_ICONS = [Sparkles, Brain, Copy, Layout, FileSearch, Database, Globe, Heart]
 const MODULE_COLORS = ['#89D4E1', '#F98013', '#FF3093', '#1D9BF0', '#23C847', '#FF0000', '#B50080', '#FF0000']
@@ -91,6 +91,7 @@ export default function Dashboard() {
 
     if (allLessonsComplete && retoEnviado && pruebaAprobada) return 'completado'
     if (isAdmin) return 'disponible'
+    if (!modulo.disponible) return 'proximamente'
     if (index === 0) return diagData.preCompleted ? 'disponible' : 'bloqueado'
 
     const prevModulo = modulos[index - 1]
@@ -102,14 +103,17 @@ export default function Dashboard() {
     return (prevAllComplete && prevAprobada) ? 'disponible' : 'bloqueado'
   }
 
-  const totalModulos = modulos.length
-  const completedModulos = modulos.filter((m, i) => getModuleStatus(m, i) === 'completado').length
+  // Filtrar modulos disponibles para calculos de progreso
+  const modulosActivos = isAdmin ? modulos : modulos.filter(m => m.disponible)
+  const totalModulos = modulosActivos.length
+  const completedModulos = modulosActivos.filter((m) => getModuleStatus(m, modulos.indexOf(m)) === 'completado').length
 
   // Progreso granular: pruebas aprobadas + retos enviados + diagnosticos
-  const pruebasModulares = modulos.flatMap(m => m.pruebas?.filter(p => p.tipo === 'modular') || [])
+  const pruebasModulares = modulosActivos.flatMap(m => m.pruebas?.filter(p => p.tipo === 'modular') || [])
   const pruebasAprobadas = pruebasModulares.filter(p => approvedTests.has(p.id)).length
-  const retosEnviados = retos.filter(r => progreso.entregas.some(e => e.reto_id === r.id && e.estado === 'enviado')).length
-  const totalSteps = pruebasModulares.length + retos.length + 2
+  const retosActivos = retos.filter(r => modulosActivos.some(m => m.id === r.modulo_id))
+  const retosEnviados = retosActivos.filter(r => progreso.entregas.some(e => e.reto_id === r.id && e.estado === 'enviado')).length
+  const totalSteps = pruebasModulares.length + retosActivos.length + 2
   let completedSteps = pruebasAprobadas + retosEnviados
   if (diagData.preCompleted) completedSteps++
   if (diagData.postCompleted) completedSteps++
@@ -243,8 +247,8 @@ export default function Dashboard() {
                     return (
                       <button
                         key={modulo.id}
-                        onClick={() => status !== 'bloqueado' && navigate(`/course/modulo/${modulo.id}`)}
-                        disabled={status === 'bloqueado'}
+                        onClick={() => status !== 'bloqueado' && status !== 'proximamente' && navigate(`/course/modulo/${modulo.id}`)}
+                        disabled={status === 'bloqueado' || status === 'proximamente'}
                         className={`relative text-left rounded-xl p-4 border transition-all cursor-pointer ${
                           status === 'completado'
                             ? 'bg-white border-avianca-green/30 hover:shadow-md'
@@ -279,6 +283,11 @@ export default function Dashboard() {
                           )}
                           {status === 'disponible' && <ChevronRight className="w-4 h-4 text-avianca-cyan" />}
                           {status === 'bloqueado' && <Lock className="w-4 h-4 text-slate-400" />}
+                          {status === 'proximamente' && (
+                            <span className="flex items-center gap-1 text-xs text-slate-400">
+                              <Clock className="w-3.5 h-3.5" /> Disponible proximamente
+                            </span>
+                          )}
                         </div>
                       </button>
                     )

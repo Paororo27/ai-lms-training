@@ -8,7 +8,7 @@ import confetti from 'canvas-confetti'
 
 export default function Prueba() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const navigate = useNavigate()
 
   const [prueba, setPrueba] = useState(null)
@@ -32,6 +32,19 @@ export default function Prueba() {
   }, [user, id])
 
   const loadQuiz = async () => {
+    // Verificar disponibilidad del modulo
+    if (role !== 'admin') {
+      const { data: moduloData } = await supabase
+        .from('modulos')
+        .select('disponible')
+        .eq('id', id)
+        .single()
+      if (moduloData && !moduloData.disponible) {
+        navigate('/course', { replace: true })
+        return
+      }
+    }
+
     // Obtener prueba del modulo
     const { data: pruebaData } = await supabase
       .from('pruebas')

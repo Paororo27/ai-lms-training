@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { supabase } from '../../lib/supabase'
-import { ChevronLeft, Plus, Trash2, ChevronUp, ChevronDown, Pencil, Save, X, Video, FileText, Wrench, Gamepad2 } from 'lucide-react'
+import { ChevronLeft, Plus, Trash2, ChevronUp, ChevronDown, Pencil, Save, X, Video, FileText, Wrench, Gamepad2, Eye, EyeOff } from 'lucide-react'
 import { toast } from '../../components/toast'
 import ConfirmModal from '../../components/confirm-modal'
 
@@ -32,6 +32,7 @@ export default function AdminModulos() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [confirmState, setConfirmState] = useState({ open: false, action: null, message: '' })
+  const [toggling, setToggling] = useState(null)
 
   useEffect(() => { loadModulos() }, [])
   useEffect(() => { if (expandedId) loadLecciones(expandedId) }, [expandedId])
@@ -93,6 +94,18 @@ export default function AdminModulos() {
     setEditingModulo(null)
     setSaving(false)
     toast('Modulo actualizado')
+  }
+
+  // Toggle disponibilidad
+  const toggleDisponible = async (modulo) => {
+    if (toggling) return
+    setToggling(modulo.id)
+    const nuevoValor = !modulo.disponible
+    const { error } = await supabase.from('modulos').update({ disponible: nuevoValor }).eq('id', modulo.id)
+    if (error) { toast('Error actualizando disponibilidad', 'error'); setToggling(null); return }
+    setModulos(prev => prev.map(m => m.id === modulo.id ? { ...m, disponible: nuevoValor } : m))
+    toast('Modulo actualizado')
+    setToggling(null)
   }
 
   // Delete modulo
@@ -202,6 +215,7 @@ export default function AdminModulos() {
               </button>
 
               <div className="flex items-center gap-2">
+                <button onClick={() => toggleDisponible(modulo)} disabled={toggling === modulo.id} className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg cursor-pointer ${modulo.disponible ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>{modulo.disponible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />} {modulo.disponible ? 'Visible' : 'Oculto'}</button>
                 <button onClick={() => setEditingModulo(editingModulo?.id === modulo.id ? null : { ...modulo })} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-avianca-cyan/10 text-avianca-cyan hover:bg-avianca-cyan/20 cursor-pointer"><Pencil className="w-3.5 h-3.5" /> Editar</button>
                 <button onClick={() => setExpandedId(expandedId === modulo.id ? null : modulo.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-avianca-dark/5 text-avianca-dark hover:bg-avianca-dark/10 cursor-pointer">{expandedId === modulo.id ? <X className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />} Lecciones</button>
                 <button onClick={() => setConfirmState({ open: true, action: () => deleteModulo(modulo.id), message: 'Se eliminara este modulo y todo su contenido.' })} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg text-red-400 hover:bg-red-50 cursor-pointer"><Trash2 className="w-3.5 h-3.5" /></button>

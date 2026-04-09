@@ -47,6 +47,20 @@ Deno.serve(async (req) => {
       return error('Prueba no encontrada', 404)
     }
 
+    // 3b. Validar disponibilidad del modulo
+    if (prueba.modulo_id) {
+      const { data: modulo } = await supabaseAdmin
+        .from('modulos')
+        .select('disponible')
+        .eq('id', prueba.modulo_id)
+        .single()
+
+      const isAdmin = user.app_metadata?.role === 'admin'
+      if (modulo && !modulo.disponible && !isAdmin) {
+        return error('Este modulo aun no esta disponible', 403)
+      }
+    }
+
     // 4. Contar intentos previos
     const { count: intentosPrevios } = await supabaseAdmin
       .from('intentos_prueba')
