@@ -401,7 +401,7 @@ export default function Modulo() {
       <ConfirmModal
         open={showRetoConfirm}
         title="Enviar reto"
-        message="Una vez enviado, no podras modificar tu entrega. Asegurate de que el link de OneDrive sea correcto."
+        message={<>Una vez enviado, no podrás modificar tu entrega. Asegúrate de que el link de OneDrive sea correcto. <strong>Es MUY importante que también compartas el contenido al correo: aviancaaprende@avianca.com</strong></>}
         confirmLabel="Enviar reto"
         variant="default"
         onConfirm={handleSubmitReto}
