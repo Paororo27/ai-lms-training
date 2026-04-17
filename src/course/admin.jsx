@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
-import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy, RotateCcw, Search } from 'lucide-react'
+import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy, RotateCcw, Search, Download } from 'lucide-react'
 import { toast } from '../components/toast'
 import ConfirmModal from '../components/confirm-modal'
 import { NavLink } from 'react-router'
@@ -206,6 +206,33 @@ export default function Admin() {
 
   const sorted = [...filteredUsers].sort((a, b) => b.progressPct - a.progressPct)
 
+  const downloadCSV = () => {
+    const headers = ['Codigo', 'Estado', 'Progreso %', 'Modulos aprobados', 'Total modulos', 'Puntaje promedio', 'Diag. entrada', 'Diag. salida', 'Mejora', 'Lecciones completadas', 'Total lecciones', 'Retos enviados', 'Total retos']
+    const rows = sorted.map(u => [
+      u.code,
+      u.estado,
+      u.progressPct,
+      u.aprobadas,
+      u.totalModulos,
+      u.avgScore ?? '',
+      u.diagPreScore ?? '',
+      u.diagPostScore ?? '',
+      u.mejora ?? '',
+      u.leccionesCompletadas,
+      u.totalLecciones,
+      u.retosEnviados,
+      u.totalRetos,
+    ])
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `progreso-participantes-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       <button onClick={() => navigate('/course')} className="text-sm text-slate-500 hover:text-avianca-dark flex items-center gap-1 cursor-pointer">
@@ -307,7 +334,16 @@ export default function Admin() {
       {/* Tabla de usuarios */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3">
-          <h3 className="font-semibold text-avianca-dark shrink-0">Participantes</h3>
+          <div className="flex items-center gap-2 shrink-0">
+            <h3 className="font-semibold text-avianca-dark">Participantes</h3>
+            <button
+              onClick={downloadCSV}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs text-slate-500 hover:text-avianca-dark bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              title="Descargar CSV"
+            >
+              <Download className="w-3.5 h-3.5" /> CSV
+            </button>
+          </div>
           <div className="relative max-w-48">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
