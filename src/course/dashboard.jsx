@@ -83,7 +83,7 @@ export default function Dashboard() {
     const moduleLessons = modulo.lecciones?.map(l => l.id) || []
     const allLessonsComplete = moduleLessons.length > 0 && moduleLessons.every(id => completedLessons.has(id))
     const modulePrueba = modulo.pruebas?.find(p => p.tipo === 'modular')
-    const pruebaAprobada = modulePrueba ? approvedTests.has(modulePrueba.id) : false
+    const pruebaAprobada = modulePrueba ? approvedTests.has(modulePrueba.id) : true
     const moduleReto = retos.find(r => r.modulo_id === modulo.id)
     const retoEnviado = moduleReto
       ? progreso.entregas.some(e => e.reto_id === moduleReto.id && e.estado === 'enviado')
@@ -98,7 +98,7 @@ export default function Dashboard() {
     const prevLessons = prevModulo?.lecciones?.map(l => l.id) || []
     const prevAllComplete = prevLessons.length > 0 && prevLessons.every(id => completedLessons.has(id))
     const prevPrueba = prevModulo?.pruebas?.find(p => p.tipo === 'modular')
-    const prevAprobada = prevPrueba ? approvedTests.has(prevPrueba.id) : false
+    const prevAprobada = prevPrueba ? approvedTests.has(prevPrueba.id) : true
 
     return (prevAllComplete && prevAprobada) ? 'disponible' : 'bloqueado'
   }
