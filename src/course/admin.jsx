@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
-import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy, RotateCcw, Search, Download } from 'lucide-react'
+import { ChevronLeft, Users, TrendingUp, AlertTriangle, CheckCircle, Clock, BarChart, BookOpen, ClipboardList, Trophy, RotateCcw, Search, Download, Award } from 'lucide-react'
 import { toast } from '../components/toast'
 import ConfirmModal from '../components/confirm-modal'
 import { NavLink } from 'react-router'
 import ProgressBar from '../components/progress-bar'
+import { generateCertificatePDF } from '../lib/certificate-pdf'
 
 export default function Admin() {
   const navigate = useNavigate()
@@ -109,6 +110,11 @@ export default function Admin() {
       if (diagPostScore !== null) completedSteps++
       const progressPct = Math.round((completedSteps / totalSteps) * 100)
 
+      const isReady = aprobadas === pruebasModulares.length
+        && retosEnviados === retosConModulo.length
+        && diagPreScore !== null
+        && diagPostScore !== null
+
       userMap[uid] = {
         id: uid,
         estado,
@@ -124,14 +130,19 @@ export default function Admin() {
         totalLecciones,
         retosEnviados,
         totalRetos: retosConModulo.length,
+        isReady,
       }
     })
 
-    // Obtener codigos de usuario
+    // Obtener codigos y nombres de usuario
     const { data: userCodes } = await supabase.rpc('get_user_codes', { p_user_ids: userIds })
-    const codeMap = {}
-    ;(userCodes || []).forEach(u => { codeMap[u.id] = u.code })
-    Object.values(userMap).forEach(u => { u.code = codeMap[u.id] || u.id.slice(0, 8) })
+    const infoMap = {}
+    ;(userCodes || []).forEach(u => { infoMap[u.id] = { code: u.code, nombre: u.nombre } })
+    Object.values(userMap).forEach(u => {
+      const info = infoMap[u.id] || {}
+      u.code = info.code || u.id.slice(0, 8)
+      u.nombre = info.nombre || null
+    })
 
     const userList = Object.values(userMap)
 
@@ -202,13 +213,23 @@ export default function Admin() {
 
   const filteredUsers = usuarios
     .filter(u => filter === 'todos' || u.estado === filter)
-    .filter(u => !search || u.code?.toLowerCase().includes(search.toLowerCase()))
+    .filter(u => {
+      if (!search) return true
+      const q = search.toLowerCase()
+      return u.code?.toLowerCase().includes(q) || u.nombre?.toLowerCase().includes(q)
+    })
 
   const sorted = [...filteredUsers].sort((a, b) => b.progressPct - a.progressPct)
 
+  const escapeCsv = (v) => {
+    const s = String(v ?? '')
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+
   const downloadCSV = () => {
-    const headers = ['Codigo', 'Estado', 'Progreso %', 'Modulos aprobados', 'Total modulos', 'Puntaje promedio', 'Diag. entrada', 'Diag. salida', 'Mejora', 'Lecciones completadas', 'Total lecciones', 'Retos enviados', 'Total retos']
+    const headers = ['Nombre', 'Codigo', 'Estado', 'Progreso %', 'Modulos aprobados', 'Total modulos', 'Puntaje promedio', 'Diag. entrada', 'Diag. salida', 'Mejora', 'Lecciones completadas', 'Total lecciones', 'Retos enviados', 'Total retos']
     const rows = sorted.map(u => [
+      u.nombre ?? '',
       u.code,
       u.estado,
       u.progressPct,
@@ -223,7 +244,7 @@ export default function Admin() {
       u.retosEnviados,
       u.totalRetos,
     ])
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const csv = [headers, ...rows].map(r => r.map(escapeCsv).join(',')).join('\n')
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -231,6 +252,27 @@ export default function Admin() {
     a.download = `progreso-participantes-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const generateAdminDiploma = async (user) => {
+    const { data, error } = await supabase
+      .rpc('check_certificate_ready', { p_usuario_id: user.id })
+    if (error) {
+      toast(`Error: ${error.message}`, 'error')
+      return
+    }
+    if (!data?.ready) {
+      toast('El participante aun no completa los requisitos', 'error')
+      return
+    }
+    try {
+      await generateCertificatePDF({
+        nombre: data.nombre || user.nombre || user.code,
+        scores: data.scores,
+      })
+    } catch (e) {
+      toast(`Error generando PDF: ${e.message}`, 'error')
+    }
   }
 
   return (
@@ -350,7 +392,7 @@ export default function Admin() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar usuario..."
+              placeholder="Nombre o codigo..."
               className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-avianca-cyan focus:border-avianca-cyan"
             />
           </div>
@@ -373,7 +415,7 @@ export default function Admin() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left">
-                <th className="px-5 py-3 font-medium text-slate-500">Usuario</th>
+                <th className="px-5 py-3 font-medium text-slate-500">Participante</th>
                 <th className="px-5 py-3 font-medium text-slate-500">Estado</th>
                 <th className="px-5 py-3 font-medium text-slate-500">Progreso</th>
                 <th className="px-5 py-3 font-medium text-slate-500">Modulos</th>
@@ -385,7 +427,10 @@ export default function Admin() {
             <tbody className="divide-y divide-slate-100">
               {sorted.map(u => (
                 <tr key={u.id} className={u.bloqueado ? 'bg-red-50' : ''}>
-                  <td className="px-5 py-3 font-mono text-xs text-slate-600">{u.code}</td>
+                  <td className="px-5 py-3">
+                    <p className="text-xs text-slate-700 leading-tight">{u.nombre || <span className="text-slate-400 italic">Sin nombre</span>}</p>
+                    <p className="font-mono text-[10px] text-slate-400 leading-tight">{u.code}</p>
+                  </td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                       u.estado === 'completado' ? 'bg-avianca-green/10 text-avianca-green' :
@@ -416,13 +461,24 @@ export default function Admin() {
                     ) : '—'}
                   </td>
                   <td className="px-5 py-3">
-                    <button
-                      onClick={() => setConfirmState({ open: true, userId: u.id, code: u.code })}
-                      className="p-1.5 text-slate-300 hover:text-red-500 cursor-pointer"
-                      title="Resetear historial"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {u.isReady && (
+                        <button
+                          onClick={() => generateAdminDiploma(u)}
+                          className="p-1.5 text-avianca-green/60 hover:text-avianca-green cursor-pointer"
+                          title="Generar diploma"
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setConfirmState({ open: true, userId: u.id, code: u.code })}
+                        className="p-1.5 text-slate-300 hover:text-red-500 cursor-pointer"
+                        title="Resetear historial"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
