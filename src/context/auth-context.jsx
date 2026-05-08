@@ -32,9 +32,10 @@ export function AuthProvider({ children }) {
   const user = session?.user ?? null
   const role = user?.app_metadata?.role ?? 'participante'
   const userCode = user?.app_metadata?.code ?? user?.email?.split('@')[0] ?? ''
+  const userName = user?.app_metadata?.nombre ?? null
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, role, userCode, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, role, userCode, userName, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )

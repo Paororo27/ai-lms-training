@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
+import { generateCertificatePDF } from '../lib/certificate-pdf'
 import { ChevronLeft, Award, Download, AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function Certificado() {
@@ -15,128 +16,25 @@ export default function Certificado() {
 
   useEffect(() => {
     if (!user) return
-    checkReady()
-  }, [user])
-
-  const checkReady = async () => {
-    const { data: result, error: rpcErr } = await supabase
+    let active = true
+    supabase
       .rpc('check_certificate_ready', { p_usuario_id: user.id })
-
-    if (rpcErr) {
-      setError(`Error verificando requisitos: ${rpcErr.message}`)
-    } else {
-      setData(result)
-    }
-    setLoading(false)
-  }
+      .then(({ data: result, error: rpcErr }) => {
+        if (!active) return
+        if (rpcErr) setError(`Error verificando requisitos: ${rpcErr.message}`)
+        else setData(result)
+        setLoading(false)
+      })
+    return () => { active = false }
+  }, [user])
 
   const generatePDF = async () => {
     setGenerating(true)
     try {
-      const { jsPDF } = await import('jspdf')
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-
-      const w = doc.internal.pageSize.getWidth()
-      const h = doc.internal.pageSize.getHeight()
-      const scores = data.scores
-
-      // Fondo
-      doc.setFillColor(30, 41, 59) // avianca-dark
-      doc.rect(0, 0, w, h, 'F')
-
-      // Borde decorativo
-      doc.setDrawColor(137, 212, 225) // avianca-cyan
-      doc.setLineWidth(1.5)
-      doc.rect(12, 12, w - 24, h - 24)
-
-      // Linea decorativa superior
-      doc.setFillColor(255, 0, 0) // avianca-red
-      doc.rect(12, 12, (w - 24) / 2, 3, 'F')
-      doc.setFillColor(181, 0, 128) // avianca-magenta
-      doc.rect(12 + (w - 24) / 2, 12, (w - 24) / 2, 3, 'F')
-
-      // Titulo
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(12)
-      doc.setTextColor(137, 212, 225)
-      doc.text('AVIANCA', w / 2, 35, { align: 'center' })
-
-      doc.setFontSize(28)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(255, 255, 255)
-      doc.text('Certificado de Completacion', w / 2, 52, { align: 'center' })
-
-      // Linea separadora
-      doc.setDrawColor(137, 212, 225)
-      doc.setLineWidth(0.5)
-      doc.line(w / 2 - 50, 58, w / 2 + 50, 58)
-
-      // Subtitulo taller
-      doc.setFontSize(14)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(200, 200, 200)
-      doc.text('Taller de Capacitacion en Inteligencia Artificial', w / 2, 70, { align: 'center' })
-      doc.text('Copilot Chat para Recursos Humanos', w / 2, 78, { align: 'center' })
-
-      // Codigo participante
-      doc.setFontSize(20)
-      doc.setFont('helvetica', 'bold')
-      doc.setTextColor(137, 212, 225)
-      doc.text(userCode, w / 2, 98, { align: 'center' })
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(160, 160, 160)
-      doc.text('Participante', w / 2, 105, { align: 'center' })
-
-      // Puntajes en 3 columnas
-      const colY = 120
-      const colWidth = 60
-      const startX = w / 2 - (colWidth * 3) / 2
-
-      const cols = [
-        { label: 'Puntaje Promedio', value: `${scores.promedio_modular}%`, color: [255, 255, 255] },
-        { label: 'Diagnostico Entrada', value: `${scores.diagnostico_pre}%`, color: [200, 200, 200] },
-        { label: 'Diagnostico Salida', value: `${scores.diagnostico_post}%`, color: [35, 200, 71] },
-      ]
-
-      cols.forEach((col, i) => {
-        const cx = startX + colWidth * i + colWidth / 2
-        doc.setFontSize(22)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(...col.color)
-        doc.text(col.value, cx, colY, { align: 'center' })
-
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'normal')
-        doc.setTextColor(140, 140, 140)
-        doc.text(col.label, cx, colY + 7, { align: 'center' })
+      await generateCertificatePDF({
+        nombre: data.nombre || userCode,
+        scores: data.scores,
       })
-
-      // Mejora diagnostica
-      const mejora = scores.diagnostico_post - scores.diagnostico_pre
-      if (mejora > 0) {
-        doc.setFontSize(10)
-        doc.setTextColor(35, 200, 71)
-        doc.text(`Mejora: +${mejora} puntos`, w / 2, colY + 18, { align: 'center' })
-      }
-
-      // Fecha
-      const fecha = new Date().toLocaleDateString('es-CO', {
-        day: 'numeric', month: 'long', year: 'numeric'
-      })
-
-      doc.setFontSize(10)
-      doc.setFont('helvetica', 'normal')
-      doc.setTextColor(160, 160, 160)
-      doc.text(`Expedido el ${fecha}`, w / 2, h - 32, { align: 'center' })
-
-      // Duracion
-      doc.setFontSize(8)
-      doc.setTextColor(120, 120, 120)
-      doc.text('Programa de 4 semanas  |  4 horas de formacion  |  6 modulos + reto final', w / 2, h - 25, { align: 'center' })
-
-      doc.save(`certificado-copilot-${userCode}.pdf`)
     } catch (e) {
       setError(`Error generando PDF: ${e.message}`)
     }
