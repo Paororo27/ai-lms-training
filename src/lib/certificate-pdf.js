@@ -7,7 +7,8 @@ function slug(s) {
     .replace(/^-|-$/g, '')
 }
 
-export async function generateCertificatePDF({ nombre, scores }) {
+export async function generateCertificatePDF({ nombre, code, scores }) {
+  const displayName = String(nombre || code || 'Participante')
   const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
 
@@ -51,11 +52,11 @@ export async function generateCertificatePDF({ nombre, scores }) {
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(137, 212, 225)
   doc.setFontSize(nombreFontSize)
-  while (doc.getTextWidth(nombre) > maxNombreWidth && nombreFontSize > 14) {
+  while (doc.getTextWidth(displayName) > maxNombreWidth && nombreFontSize > 14) {
     nombreFontSize -= 1
     doc.setFontSize(nombreFontSize)
   }
-  doc.text(nombre, w / 2, 100, { align: 'center' })
+  doc.text(displayName, w / 2, 100, { align: 'center' })
 
   doc.setFontSize(10)
   doc.setFont('helvetica', 'normal')
@@ -105,5 +106,5 @@ export async function generateCertificatePDF({ nombre, scores }) {
   doc.setTextColor(120, 120, 120)
   doc.text('Programa de 4 semanas  |  4 horas de formacion  |  6 modulos + reto final', w / 2, h - 25, { align: 'center' })
 
-  doc.save(`certificado-copilot-${slug(nombre)}.pdf`)
+  doc.save(`certificado-copilot-${slug(displayName) || 'participante'}.pdf`)
 }

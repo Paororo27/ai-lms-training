@@ -267,7 +267,8 @@ export default function Admin() {
     }
     try {
       await generateCertificatePDF({
-        nombre: data.nombre || user.nombre || user.code,
+        nombre: data.nombre || user.nombre,
+        code: user.code,
         scores: data.scores,
       })
     } catch (e) {

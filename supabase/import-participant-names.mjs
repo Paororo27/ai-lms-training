@@ -36,12 +36,32 @@ function titleCase(s) {
   return s.trim().toLowerCase().replace(/(^|\s)\p{L}/gu, c => c.toUpperCase())
 }
 
+function parseLine(line) {
+  const out = []
+  let cur = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i]
+    if (inQuotes) {
+      if (c === '"' && line[i + 1] === '"') { cur += '"'; i++ }
+      else if (c === '"') inQuotes = false
+      else cur += c
+    } else {
+      if (c === ',') { out.push(cur); cur = '' }
+      else if (c === '"') inQuotes = true
+      else cur += c
+    }
+  }
+  out.push(cur)
+  return out
+}
+
 function parseCsv(text) {
   return text.split(/\r?\n/)
     .map(l => l.trim())
     .filter(Boolean)
     .slice(1)
-    .map(l => l.split(','))
+    .map(parseLine)
 }
 
 async function main() {
