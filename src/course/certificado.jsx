@@ -32,7 +32,8 @@ export default function Certificado() {
     setGenerating(true)
     try {
       await generateCertificatePDF({
-        nombre: data.nombre || userCode,
+        nombre: data.nombre,
+        code: userCode,
         scores: data.scores,
       })
     } catch (e) {
