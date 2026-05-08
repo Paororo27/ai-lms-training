@@ -98,7 +98,7 @@ export default function Dashboard() {
     const prevLessons = prevModulo?.lecciones?.map(l => l.id) || []
     const prevAllComplete = prevLessons.length > 0 && prevLessons.every(id => completedLessons.has(id))
     const prevPrueba = prevModulo?.pruebas?.find(p => p.tipo === 'modular')
-    const prevAprobada = prevPrueba ? approvedTests.has(prevPrueba.id) : false
+    const prevAprobada = prevPrueba ? approvedTests.has(prevPrueba.id) : true
 
     return (prevAllComplete && prevAprobada) ? 'disponible' : 'bloqueado'
   }
