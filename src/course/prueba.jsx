@@ -115,6 +115,11 @@ export default function Prueba() {
   const handleSubmit = async () => {
     if (!prueba) return
 
+    if (preguntas.length === 0) {
+      setError('No hay preguntas disponibles para este intento. Contacta al administrador.')
+      return
+    }
+
     const todasRespondidas = preguntas.every(p => respuestas[p.id] !== undefined)
     if (!todasRespondidas) {
       setError('Responde todas las preguntas antes de enviar')
@@ -259,7 +264,8 @@ export default function Prueba() {
   }
 
   // Vista de quiz activo
-  const todasRespondidas = preguntas.every(p => respuestas[p.id] !== undefined)
+  const sinPreguntas = preguntas.length === 0
+  const todasRespondidas = !sinPreguntas && preguntas.every(p => respuestas[p.id] !== undefined)
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -272,6 +278,12 @@ export default function Prueba() {
           {preguntas.length} preguntas &middot; Intento {intentosPrevios + 1} de 2 &middot; Minimo {prueba?.puntaje_aprobatorio}%
         </p>
       </div>
+
+      {sinPreguntas && (
+        <p className="text-slate-600 text-sm text-center bg-slate-50 border border-slate-200 rounded-lg py-4 px-3">
+          No hay preguntas disponibles para este intento. Contacta al administrador.
+        </p>
+      )}
 
       <div className="space-y-4">
         {preguntas.map((pregunta, index) => (
@@ -292,7 +304,7 @@ export default function Prueba() {
       <div className="flex justify-end">
         <button
           onClick={handleSubmit}
-          disabled={!todasRespondidas || submitting}
+          disabled={sinPreguntas || !todasRespondidas || submitting}
           className="px-8 py-3 bg-gradient-to-r from-avianca-red to-avianca-magenta text-white font-semibold rounded-xl hover:opacity-90 disabled:opacity-40 transition-all cursor-pointer disabled:cursor-not-allowed"
         >
           {submitting ? 'Calificando...' : 'Enviar respuestas'}
