@@ -35,7 +35,7 @@ export default function Modulo() {
 
   const loadModulo = async () => {
     const [moduloRes, leccionesRes, progresoRes, retoRes] = await Promise.all([
-      supabase.from('modulos').select('*').eq('id', id).single(),
+      supabase.from('modulos').select('*, pruebas(id, tipo)').eq('id', id).single(),
       supabase.from('lecciones').select('*').eq('modulo_id', id).order('orden'),
       supabase.from('progreso_usuario').select('leccion_id, completado').eq('usuario_id', user.id),
       supabase.from('retos').select('*').eq('modulo_id', id).maybeSingle(),
@@ -126,6 +126,8 @@ export default function Modulo() {
   const allComplete = lecciones.every(l => progresoMap[l.id])
   const completedCount = lecciones.filter(l => progresoMap[l.id]).length
   const canGoToPrueba = reto ? (allComplete && retoEnviado) : allComplete
+  // El ultimo modulo (reto final) no tiene prueba modular: cierra con el diagnostico de salida
+  const tienePruebaModular = modulo.pruebas?.some(p => p.tipo === 'modular') ?? false
 
   const TIPO_ICONS = { video: Play, texto: FileText, ejercicio: Wrench, recurso_externo: Gamepad2 }
   const TIPO_LABELS = { video: 'Video', texto: 'Lectura', ejercicio: 'Ejercicio practico', recurso_externo: 'Actividad interactiva' }
@@ -213,10 +215,10 @@ export default function Modulo() {
           {/* Boton prueba */}
           {canGoToPrueba && (
             <button
-              onClick={() => navigate(`/course/modulo/${id}/prueba`)}
+              onClick={() => navigate(tienePruebaModular ? `/course/modulo/${id}/prueba` : '/course/diagnostico/post')}
               className="w-full mt-3 py-3 bg-gradient-to-r from-avianca-red to-avianca-magenta text-white font-semibold rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-              Ir a la prueba <ArrowRight className="w-4 h-4" />
+              {tienePruebaModular ? 'Ir a la prueba' : 'Ir al diagnostico de salida'} <ArrowRight className="w-4 h-4" />
             </button>
           )}
         </div>
