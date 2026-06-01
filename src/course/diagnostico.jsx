@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { supabase } from '../lib/supabase'
+import { supabase, getFunctionErrorMessage } from '../lib/supabase'
 import { useAuth } from '../context/auth-context'
 import QuizQuestion from '../components/quiz-question'
 import { ChevronLeft, CheckCircle, ArrowRight } from 'lucide-react'
@@ -120,7 +120,7 @@ export default function Diagnostico() {
     })
 
     if (submitErr) {
-      setError('Error al enviar respuestas. Intenta de nuevo.')
+      setError(await getFunctionErrorMessage(submitErr, 'Error al enviar respuestas. Intenta de nuevo.'))
       setSubmitting(false)
       return
     }
